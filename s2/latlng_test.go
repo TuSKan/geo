@@ -18,7 +18,7 @@ import (
 	"math"
 	"testing"
 
-	"github.com/golang/geo/s1"
+	"github.com/rubenpoppe/geo/s1"
 )
 
 func TestLatLngNormalized(t *testing.T) {
@@ -107,8 +107,10 @@ func TestLatLngPointConversion(t *testing.T) {
 		{90, -180, -6.12323e-17, -7.4988e-33, 1},
 		{-90, 180, -6.12323e-17, 7.4988e-33, -1},
 		{-90, -180, -6.12323e-17, -7.4988e-33, -1},
-		{-81.82750430354997, 151.19796752929685,
-			-0.12456788151479525, 0.0684875268284729, -0.989844584550441},
+		{
+			-81.82750430354997, 151.19796752929685,
+			-0.12456788151479525, 0.0684875268284729, -0.989844584550441,
+		},
 	}
 	for _, test := range tests {
 		ll := LatLngFromDegrees(test.lat, test.lng)

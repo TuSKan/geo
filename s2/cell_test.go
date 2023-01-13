@@ -19,8 +19,8 @@ import (
 	"testing"
 	"unsafe"
 
-	"github.com/golang/geo/r2"
-	"github.com/golang/geo/s1"
+	"github.com/rubenpoppe/geo/r2"
+	"github.com/rubenpoppe/geo/s1"
 )
 
 // maxCellSize is the upper bounds on the number of bytes we want the Cell object to ever be.
@@ -261,9 +261,9 @@ func testCellChildren(t *testing.T, cell Cell) {
 
 func TestCellAreas(t *testing.T) {
 	// relative error bounds for each type of area computation
-	var exactError = math.Log(1 + 1e-6)
-	var approxError = math.Log(1.03)
-	var avgError = math.Log(1 + 1e-15)
+	exactError := math.Log(1 + 1e-6)
+	approxError := math.Log(1.03)
+	avgError := math.Log(1 + 1e-15)
 
 	// Test 1. Check the area of a top level cell.
 	const level1Cell = CellID(0x1000000000000000)
@@ -559,7 +559,6 @@ func TestCellDistance(t *testing.T) {
 		if expectedMax.Radians() <= math.Pi/3 {
 			if !float64Near(expectedMax.Radians(), actualMax.Radians(), 1e-15) {
 				t.Errorf("%v.MaxDistance(%v) = %v, want %v", cell, target, actualMax.Radians(), expectedMax.Radians())
-
 			}
 		}
 	}

@@ -20,7 +20,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/golang/geo/s1"
+	"github.com/rubenpoppe/geo/s1"
 )
 
 // Note that most of the actual testing is done in s2edge_query_{closest|furthest}_test.
@@ -38,12 +38,10 @@ func TestEdgeQueryMaxDistance(t *testing.T) {
 
 	if results[0].shapeID != 0 {
 		t.Errorf("shapeID should be 0 got %v", results[0].shapeID)
-
 	}
 
 	if results[0].edgeID != 0 {
 		t.Errorf("edgeID should be 0, got %v", results[0].edgeID)
-
 	}
 
 	if got, want := results[0].Distance().Angle().Degrees(), 4.0; !float64Near(got, want, 1e-13) {
@@ -200,9 +198,11 @@ const (
 	queryTypeIndex
 )
 
-const edgeQueryTestNumIndexes = 50
-const edgeQueryTestNumEdges = 100
-const edgeQueryTestNumQueries = 200
+const (
+	edgeQueryTestNumIndexes = 50
+	edgeQueryTestNumEdges   = 100
+	edgeQueryTestNumQueries = 200
+)
 
 // The approximate radius of Cap from which query edges are chosen.
 var testCapRadius = kmToAngle(10)
@@ -398,28 +398,27 @@ type edgeQueryBenchmarkOptions struct {
 //
 // Also generates a set of target geometries for the query, based on the
 // targetType and the input parameters. If targetType is INDEX, then:
-//   (i) the target will have approximately numTargetEdges edges.
-//   (ii) includeInteriors will be set on the target index.
 //
-//   - If chooseTargetFromIndex is true, then the target will be chosen
-//     from the geometry in the index itself, otherwise it will be chosen
-//     randomly according to the parameters below:
+//	(i) the target will have approximately numTargetEdges edges.
+//	(ii) includeInteriors will be set on the target index.
 //
-//   - If targetRadiusFraction > 0, the target radius will be approximately
-//     the given fraction of the index radius; if targetRadiusFraction < 0,
-//     it will be chosen randomly up to corresponding positive fraction.
+//	- If chooseTargetFromIndex is true, then the target will be chosen
+//	  from the geometry in the index itself, otherwise it will be chosen
+//	  randomly according to the parameters below:
 //
-//   - If centerSeparationFraction > 0, then the centers of index and target
-//     bounding caps will be separated by the given fraction of the index
-//     radius; if centerSeparationFraction < 0, they will be separated by up
-//     to the corresponding positive fraction.
+//	- If targetRadiusFraction > 0, the target radius will be approximately
+//	  the given fraction of the index radius; if targetRadiusFraction < 0,
+//	  it will be chosen randomly up to corresponding positive fraction.
 //
-//   - The randomSeed is used to initialize an internal seed, which is
-//     incremented at the start of each call to generateEdgeQueryWithTargets.
-//     This is for debugging purposes.
+//	- If centerSeparationFraction > 0, then the centers of index and target
+//	  bounding caps will be separated by the given fraction of the index
+//	  radius; if centerSeparationFraction < 0, they will be separated by up
+//	  to the corresponding positive fraction.
 //
+//	- The randomSeed is used to initialize an internal seed, which is
+//	  incremented at the start of each call to generateEdgeQueryWithTargets.
+//	  This is for debugging purposes.
 func generateEdgeQueryWithTargets(opts *edgeQueryBenchmarkOptions, query *EdgeQuery, queryIndex *ShapeIndex) (targets []distanceTarget, targetIndexes []*ShapeIndex) {
-
 	// To save time, we generate at most this many distinct targets per index.
 	const maxTargetsPerIndex = 100
 

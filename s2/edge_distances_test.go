@@ -18,8 +18,8 @@ import (
 	"math"
 	"testing"
 
-	"github.com/golang/geo/r3"
-	"github.com/golang/geo/s1"
+	"github.com/rubenpoppe/geo/r3"
+	"github.com/rubenpoppe/geo/s1"
 )
 
 func TestEdgeDistancesCheckDistance(t *testing.T) {
@@ -110,7 +110,8 @@ func TestEdgeDistancesCheckDistance(t *testing.T) {
 			a:       r3.Vector{1, 0, 0},
 			b:       r3.Vector{0, 1, 0},
 			distRad: math.Asin(math.Sqrt(1.0 / 3.0)),
-			want:    r3.Vector{1, 1, 0}},
+			want:    r3.Vector{1, 1, 0},
+		},
 		{
 			x:       r3.Vector{-1, 0, 0},
 			a:       r3.Vector{1, 1, 0},
@@ -180,7 +181,6 @@ func TestEdgeDistancesUpdateMinInteriorDistanceLowerBoundOptimizationIsConservat
 	if !ok {
 		t.Errorf("UpdateMinDistance(%v, %v, %v, %v) = %v, want %v", x, a, b, s1.InfChordAngle(), minDistance, minDistance)
 	}
-
 }
 
 func TestEdgeDistancesUpdateMinInteriorDistanceRejectionTestIsConservative(t *testing.T) {
@@ -197,7 +197,6 @@ func TestEdgeDistancesUpdateMinInteriorDistanceRejectionTestIsConservative(t *te
 		want    bool
 	}{
 		{
-
 			x:       Point{r3.Vector{1, -4.6547732744037044e-11, -5.6374428459823598e-89}},
 			a:       Point{r3.Vector{1, -8.9031850507928352e-11, 0}},
 			b:       Point{r3.Vector{-0.99999999999996347, 2.7030110029169596e-07, 1.555092348806121e-99}},
@@ -704,7 +703,6 @@ func TestEdgeDistancesEdgePairMaxDistance(t *testing.T) {
 			distRads: math.Acos(1 / math.Sqrt(3)),
 		},
 		{
-
 			// One edge is degenerate.
 			a0:       PointFromCoords(1, 0, 1),
 			a1:       PointFromCoords(1, 0, 1),
@@ -783,7 +781,6 @@ func TestEdgeDistancesEdgePairMaxDistance(t *testing.T) {
 		}
 		if !float64Near(test.distRads, maxDist.Angle().Radians(), epsilon) {
 			t.Errorf("maxDist %v - %v = %v, want < %v", test.distRads, maxDist.Angle().Radians(), (test.distRads - maxDist.Angle().Radians()), epsilon)
-
 		}
 	}
 }

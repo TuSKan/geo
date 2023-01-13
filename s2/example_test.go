@@ -17,8 +17,8 @@ package s2_test
 import (
 	"fmt"
 
-	"github.com/golang/geo/s1"
-	"github.com/golang/geo/s2"
+	"github.com/rubenpoppe/geo/s1"
+	"github.com/rubenpoppe/geo/s2"
 )
 
 func ExampleRect_DistanceToLatLng() {
@@ -122,7 +122,7 @@ func ExampleEdgeQuery_FindEdges_findClosestEdges() {
 	polylines := []s2.Polyline{
 		// This is an iteration = 3 Koch snowflake centered at the
 		// center of the continental US.
-		s2.Polyline{
+		{
 			s2.PointFromLatLng(s2.LatLngFromDegrees(47.5467, -103.6035)),
 			s2.PointFromLatLng(s2.LatLngFromDegrees(45.9214, -103.7320)),
 			s2.PointFromLatLng(s2.LatLngFromDegrees(45.1527, -105.8000)),
@@ -209,7 +209,6 @@ func ExampleEdgeQuery_FindEdges_findClosestEdges() {
 	// Polyline 0, Edge 6 is 11.8071 degrees from Point (-0.425124, -0.667311, 0.611527)
 	// Polyline 0, Edge 5 is 12.2577 degrees from Point (-0.425124, -0.667311, 0.611527)
 	// Polyline 0, Edge 11 is 12.9502 degrees from Point (-0.425124, -0.667311, 0.611527)
-
 }
 
 func ExampleEdgeQuery_FindEdges_findFurthestEdges() {
@@ -217,7 +216,7 @@ func ExampleEdgeQuery_FindEdges_findFurthestEdges() {
 	polylines := []s2.Polyline{
 		// This is an iteration = 3 Koch snowflake centered at the
 		// center of the continental US.
-		s2.Polyline{
+		{
 			s2.PointFromLatLng(s2.LatLngFromDegrees(47.5467, -103.6035)),
 			s2.PointFromLatLng(s2.LatLngFromDegrees(45.9214, -103.7320)),
 			s2.PointFromLatLng(s2.LatLngFromDegrees(45.1527, -105.8000)),
@@ -294,5 +293,4 @@ func ExampleEdgeQuery_FindEdges_findFurthestEdges() {
 	// Polyline 0, Edge 31 is 27.245 degrees from Point (-0.425124, -0.667311, 0.611527)
 	// Polyline 0, Edge 32 is 27.245 degrees from Point (-0.425124, -0.667311, 0.611527)
 	// Polyline 0, Edge 33 is 26.115 degrees from Point (-0.425124, -0.667311, 0.611527)
-
 }

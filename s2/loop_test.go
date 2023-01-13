@@ -19,9 +19,9 @@ import (
 	"math"
 	"testing"
 
-	"github.com/golang/geo/r1"
-	"github.com/golang/geo/r3"
-	"github.com/golang/geo/s1"
+	"github.com/rubenpoppe/geo/r1"
+	"github.com/rubenpoppe/geo/r3"
+	"github.com/rubenpoppe/geo/s1"
 )
 
 var (
@@ -148,7 +148,7 @@ var (
 		lineTriangle,
 		skinnyChevron,
 		loopA,
-		//snappedLoopA, // Fails TestAreaConsistentWithTurningAngle
+		// snappedLoopA, // Fails TestAreaConsistentWithTurningAngle
 		loopB,
 		aIntersectB,
 		aUnionB,
@@ -278,7 +278,6 @@ func TestLoopHoleAndSign(t *testing.T) {
 	if l.Sign() == -1 {
 		t.Errorf("loop with even depth should have a sign of +1")
 	}
-
 }
 
 func TestLoopRectBound(t *testing.T) {
@@ -1519,7 +1518,7 @@ func TestLoopTurningAngle(t *testing.T) {
 	// The spiral consists of two arms defining opposite sides of the loop.
 	const armPoints = 10000 // Number of vertices in each "arm"
 	const armRadius = 0.01  // Radius of spiral.
-	var vertices = make([]Point, 2*armPoints)
+	vertices := make([]Point, 2*armPoints)
 
 	// Set the center point of the spiral.
 	vertices[armPoints] = PointFromCoords(0, 0, 1)

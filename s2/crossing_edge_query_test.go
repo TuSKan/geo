@@ -19,7 +19,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/golang/geo/s1"
+	"github.com/rubenpoppe/geo/s1"
 )
 
 func perturbAtDistance(distance s1.Angle, a0, b0 Point) Point {
@@ -39,7 +39,6 @@ func perturbAtDistance(distance s1.Angle, a0, b0 Point) Point {
 			x.Z = math.Nextafter(x.Z, 1)
 		} else {
 			x.Z = math.Nextafter(x.Z, -1)
-
 		}
 		x = Point{x.Normalize()}
 	}
@@ -220,7 +219,6 @@ func testCrossingEdgeQueryAllCrossings(t *testing.T, edges []Edge) {
 	if numCandidates > 3*numNearbyPairs {
 		t.Errorf("number of candidates should not be dramatically larger than number of nearby pairs. got %v, want < %v", numCandidates, 3*numNearbyPairs)
 	}
-
 }
 
 func TestCrossingEdgeQueryCrossingCandidatesPerturbedCubeEdges(t *testing.T) {
@@ -305,7 +303,7 @@ func TestCrossingEdgeQueryCrossingsPolylineCrossings(t *testing.T) {
 	index.Add(makePolyline("2:0, 4:1, 2:2, 4:3, 2:4, 4:5, 2:6"))
 	index.Begin()
 
-	var tests = []struct {
+	tests := []struct {
 		a0, a1 Point
 	}{
 		{parsePoint("1:0"), parsePoint("1:4")},

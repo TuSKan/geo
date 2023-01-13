@@ -19,7 +19,7 @@ import (
 	"math/rand"
 	"testing"
 
-	"github.com/golang/geo/s1"
+	"github.com/rubenpoppe/geo/s1"
 )
 
 const (
@@ -520,7 +520,6 @@ func testPolygonOneCoveringPair(t *testing.T, a, b *Polygon) {
 		t.Errorf("%v.Contains(%v) = %v, want %v", a, b, got, want)
 	}
 	// TODO(roberts): Add the remaining checks related to construction via union
-
 }
 
 // Given polygons A and B such that both A and its complement intersect both B

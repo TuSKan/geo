@@ -19,8 +19,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/golang/geo/r2"
-	"github.com/golang/geo/s1"
+	"github.com/rubenpoppe/geo/r2"
+	"github.com/rubenpoppe/geo/s1"
 )
 
 func TestCellIDFromFace(t *testing.T) {
@@ -479,15 +479,18 @@ func TestIJLevelToBoundUV(t *testing.T) {
 		// Center point of the i,j space at different levels.
 		{
 			maxIJ / 2, maxIJ / 2, 0,
-			r2.RectFromPoints(r2.Point{-1, -1}, r2.Point{1, 1})},
+			r2.RectFromPoints(r2.Point{-1, -1}, r2.Point{1, 1}),
+		},
 		{
 			maxIJ / 2, maxIJ / 2, maxLevel / 2,
 			r2.RectFromPoints(r2.Point{-0.000040691345930099, -0.000040691345930099},
-				r2.Point{0, 0})},
+				r2.Point{0, 0}),
+		},
 		{
 			maxIJ / 2, maxIJ / 2, maxLevel,
 			r2.RectFromPoints(r2.Point{-0.000000001241763433, -0.000000001241763433},
-				r2.Point{0, 0})},
+				r2.Point{0, 0}),
+		},
 
 		// Maximum i, j at different levels.
 		{

@@ -18,10 +18,10 @@ import (
 	"io"
 	"math"
 
-	"github.com/golang/geo/r1"
-	"github.com/golang/geo/r2"
-	"github.com/golang/geo/r3"
-	"github.com/golang/geo/s1"
+	"github.com/rubenpoppe/geo/r1"
+	"github.com/rubenpoppe/geo/r2"
+	"github.com/rubenpoppe/geo/r3"
+	"github.com/rubenpoppe/geo/s1"
 )
 
 // Cell is an S2 region object that represents a cell. Unlike CellIDs,
@@ -273,9 +273,7 @@ func (c Cell) longitude(i, j int) float64 {
 	return longitude(Point{faceUVToXYZ(int(c.face), u, v)}).Radians()
 }
 
-var (
-	poleMinLat = math.Asin(math.Sqrt(1.0/3)) - 0.5*dblEpsilon
-)
+var poleMinLat = math.Asin(math.Sqrt(1.0/3)) - 0.5*dblEpsilon
 
 // RectBound returns the bounding rectangle of this cell.
 func (c Cell) RectBound() Rect {

@@ -19,7 +19,7 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/golang/geo/s1"
+	"github.com/rubenpoppe/geo/s1"
 )
 
 func TestDistanceTargetMaxCellTargetCapBound(t *testing.T) {
@@ -190,7 +190,6 @@ func TestDistanceTargetMaxPointTargetUpdateDistance(t *testing.T) {
 	}
 	if _, ok = target.updateDistanceToPoint(p, dist10); ok {
 		t.Errorf("target.updateDistanceToPoint(%v, %v) should have failed", p, dist0)
-
 	}
 
 	// Reset dist0 which was updated.

@@ -17,7 +17,7 @@ package s2
 import (
 	"sort"
 
-	"github.com/golang/geo/r2"
+	"github.com/rubenpoppe/geo/r2"
 )
 
 // CrossingEdgeQuery is used to find the Edge IDs of Shapes that are crossed by
@@ -294,7 +294,6 @@ func (c *CrossingEdgeQuery) getCellsForEdge(a, b Point) {
 // computeCellsIntersected computes the index cells intersected by the current
 // edge that are descendants of pcell and adds them to this queries set of cells.
 func (c *CrossingEdgeQuery) computeCellsIntersected(pcell *PaddedCell, edgeBound r2.Rect) {
-
 	c.iter.seek(pcell.id.RangeMin())
 	if c.iter.Done() || c.iter.CellID() > pcell.id.RangeMax() {
 		// The index does not contain pcell or any of its descendants.
@@ -384,7 +383,7 @@ func (c *CrossingEdgeQuery) splitVBound(edgeBound r2.Rect, v float64) [2]r2.Rect
 // the current edge into two child edges at the given point (u,v). uEnd and vEnd
 // indicate which bound endpoints of the first child will be updated.
 func splitBound(edgeBound r2.Rect, uEnd, vEnd int, u, v float64) [2]r2.Rect {
-	var childBounds = [2]r2.Rect{
+	childBounds := [2]r2.Rect{
 		edgeBound,
 		edgeBound,
 	}

@@ -22,7 +22,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/golang/geo/r1"
+	"github.com/rubenpoppe/geo/r1"
 )
 
 var (
@@ -147,7 +147,6 @@ func TestNormalize(t *testing.T) {
 			t.Errorf("%v.Normalize() = %v, want %v", test.have, got, test.want)
 		}
 	}
-
 }
 
 func TestEmptyRect(t *testing.T) {

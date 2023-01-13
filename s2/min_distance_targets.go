@@ -17,7 +17,7 @@ package s2
 import (
 	"math"
 
-	"github.com/golang/geo/s1"
+	"github.com/rubenpoppe/geo/s1"
 )
 
 // minDistance implements distance interface to find closest distance types.
@@ -31,6 +31,7 @@ func (m minDistance) less(other distance) bool  { return m.chordAngle() < other.
 func (m minDistance) sub(other distance) distance {
 	return minDistance(m.chordAngle() - other.chordAngle())
 }
+
 func (m minDistance) chordAngleBound() s1.ChordAngle {
 	return m.chordAngle().Expanded(m.chordAngle().MaxAngleError())
 }

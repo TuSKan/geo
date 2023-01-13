@@ -18,10 +18,10 @@ import (
 	"math"
 	"testing"
 
-	"github.com/golang/geo/r1"
-	"github.com/golang/geo/r2"
-	"github.com/golang/geo/r3"
-	"github.com/golang/geo/s1"
+	"github.com/rubenpoppe/geo/r1"
+	"github.com/rubenpoppe/geo/r2"
+	"github.com/rubenpoppe/geo/r3"
+	"github.com/rubenpoppe/geo/s1"
 )
 
 func TestRectEmptyAndFull(t *testing.T) {
@@ -163,6 +163,7 @@ func TestRectAddPoint(t *testing.T) {
 		}
 	}
 }
+
 func TestRectVertex(t *testing.T) {
 	r1 := Rect{r1.Interval{0, math.Pi / 2}, s1.IntervalFromEndpoints(-math.Pi, 0)}
 	tests := []struct {
@@ -182,6 +183,7 @@ func TestRectVertex(t *testing.T) {
 		}
 	}
 }
+
 func TestRectVertexCCWOrder(t *testing.T) {
 	for i := 0; i < 4; i++ {
 		lat := math.Pi / 4 * float64(i-2)
@@ -674,7 +676,6 @@ func TestRectCellOps(t *testing.T) {
 			t.Errorf("%v.IntersectsCell(%v) = %t, want %t", test.r, test.c, got, test.intersects)
 		}
 	}
-
 }
 
 func TestRectContainsPoint(t *testing.T) {

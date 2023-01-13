@@ -17,14 +17,14 @@ package s2
 import (
 	"testing"
 
-	"github.com/golang/geo/s1"
+	"github.com/rubenpoppe/geo/s1"
 )
 
 func TestQueryQueueEntry(t *testing.T) {
 	// This test case came from instrumenting one of the larger C++ unit tests
 	// that queued up a number of cells in order to verify that this
 	// priority queue implementation matches.
-	var cells = []struct {
+	cells := []struct {
 		dist distance
 		cell string
 	}{

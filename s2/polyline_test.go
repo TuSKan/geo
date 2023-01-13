@@ -19,8 +19,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/golang/geo/r3"
-	"github.com/golang/geo/s1"
+	"github.com/rubenpoppe/geo/r3"
+	"github.com/rubenpoppe/geo/s1"
 )
 
 func TestPolylineBasics(t *testing.T) {
@@ -519,7 +519,8 @@ func TestPolylineApproxEqual(t *testing.T) {
 }
 
 func TestPolylineInterpolate(t *testing.T) {
-	vertices := []Point{PointFromCoords(1, 0, 0),
+	vertices := []Point{
+		PointFromCoords(1, 0, 0),
 		PointFromCoords(0, 1, 0),
 		PointFromCoords(0, 1, 1),
 		PointFromCoords(0, 0, 1),
@@ -569,7 +570,8 @@ func TestPolylineInterpolate(t *testing.T) {
 
 	// Check the case where the interpolation fraction is so close to 1 that
 	// the interpolated point is identical to the last vertex.
-	vertices2 := []Point{PointFromCoords(1, 1, 1),
+	vertices2 := []Point{
+		PointFromCoords(1, 1, 1),
 		PointFromCoords(1, 1, 1+1e-15),
 		PointFromCoords(1, 1, 1+2e-15),
 	}

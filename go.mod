@@ -1,3 +1,3 @@
-module github.com/golang/geo
+module github.com/rubenpoppe/geo
 
-go 1.12
+go 1.19

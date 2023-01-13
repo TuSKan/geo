@@ -343,7 +343,7 @@ func (c *CellIndexContentsIterator) StartUnion(r *CellIndexRangeIterator) {
 // There is also a helper method that adds all elements of CellUnion with the
 // same label:
 //
-//     index.AddCellUnion(cellUnion, label)
+//	index.AddCellUnion(cellUnion, label)
 //
 // Note that the index is not dynamic; the contents of the index cannot be
 // changed once it has been built. Adding more after calling Build results in
@@ -353,7 +353,7 @@ func (c *CellIndexContentsIterator) StartUnion(r *CellIndexRangeIterator) {
 // is to use a built-in method such as IntersectingLabels (which returns
 // the labels of all cells that intersect a given target CellUnion):
 //
-//   labels := index.IntersectingLabels(targetUnion);
+//	labels := index.IntersectingLabels(targetUnion);
 //
 // Alternatively, you can use a ClosestCellQuery which computes the cell(s)
 // that are closest to a given target geometry.
@@ -482,7 +482,8 @@ func (c *CellIndex) Build() {
 				c.cellTree = append(c.cellTree, cellIndexNode{
 					cellID: deltas[i].cellID,
 					label:  deltas[i].label,
-					parent: contents})
+					parent: contents,
+				})
 				contents = int32(len(c.cellTree) - 1)
 			} else if deltas[i].cellID == SentinelCellID {
 				contents = c.cellTree[contents].parent

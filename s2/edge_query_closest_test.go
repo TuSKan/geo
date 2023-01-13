@@ -17,8 +17,8 @@ package s2
 import (
 	"testing"
 
-	"github.com/golang/geo/r3"
-	"github.com/golang/geo/s1"
+	"github.com/rubenpoppe/geo/r3"
+	"github.com/rubenpoppe/geo/s1"
 )
 
 func TestClosestEdgeQueryNoEdges(t *testing.T) {

@@ -17,8 +17,8 @@ package s2
 import (
 	"testing"
 
-	"github.com/golang/geo/r3"
-	"github.com/golang/geo/s1"
+	"github.com/rubenpoppe/geo/r3"
+	"github.com/rubenpoppe/geo/s1"
 )
 
 func TestShapeIndexBasics(t *testing.T) {
@@ -421,7 +421,6 @@ func TestShapeIndexDegenerateEdge(t *testing.T) {
 	if count != 3 {
 		t.Errorf("expected 3 index cells, got %d", count)
 	}
-
 }
 
 func TestShapeIndexManyTinyEdges(t *testing.T) {

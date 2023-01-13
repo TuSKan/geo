@@ -35,7 +35,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/golang/geo/r3"
+	"github.com/rubenpoppe/geo/r3"
 )
 
 // writePoint formats the point and writes it to the given writer.
@@ -177,11 +177,12 @@ func makeLoop(s string) *Loop {
 // same format as above.
 //
 // Examples of the input format:
-//     "10:20, 90:0, 20:30"                                  // one loop
-//     "10:20, 90:0, 20:30; 5.5:6.5, -90:-180, -15.2:20.3"   // two loops
-//     ""       // the empty polygon (consisting of no loops)
-//     "empty"  // the empty polygon (consisting of no loops)
-//     "full"   // the full polygon (consisting of one full loop)
+//
+//	"10:20, 90:0, 20:30"                                  // one loop
+//	"10:20, 90:0, 20:30; 5.5:6.5, -90:-180, -15.2:20.3"   // two loops
+//	""       // the empty polygon (consisting of no loops)
+//	"empty"  // the empty polygon (consisting of no loops)
+//	"full"   // the full polygon (consisting of one full loop)
 func makePolygon(s string, normalize bool) *Polygon {
 	var loops []*Loop
 	// Avoid the case where strings.Split on empty string will still return
@@ -224,7 +225,6 @@ func laxPolylineToString(l *laxPolyline) string {
 	var buf bytes.Buffer
 	writePoints(&buf, l.vertices)
 	return buf.String()
-
 }
 
 // makeLaxPolygon creates a laxPolygon from the given debug formatted string.
@@ -251,15 +251,16 @@ func makeLaxPolygon(s string) *laxPolygon {
 // the points, polylines, and loops (in the form of a single polygon)
 // described by the following format:
 //
-//   point1|point2|... # line1|line2|... # polygon1|polygon2|...
+//	point1|point2|... # line1|line2|... # polygon1|polygon2|...
 //
 // Examples:
-//   1:2 | 2:3 # #                     // Two points
-//   # 0:0, 1:1, 2:2 | 3:3, 4:4 #      // Two polylines
-//   # # 0:0, 0:3, 3:0; 1:1, 2:1, 1:2  // Two nested loops (one polygon)
-//   5:5 # 6:6, 7:7 # 0:0, 0:1, 1:0    // One of each
-//   # # empty                         // One empty polygon
-//   # # empty | full                  // One empty polygon, one full polygon
+//
+//	1:2 | 2:3 # #                     // Two points
+//	# 0:0, 1:1, 2:2 | 3:3, 4:4 #      // Two polylines
+//	# # 0:0, 0:3, 3:0; 1:1, 2:1, 1:2  // Two nested loops (one polygon)
+//	5:5 # 6:6, 7:7 # 0:0, 0:1, 1:0    // One of each
+//	# # empty                         // One empty polygon
+//	# # empty | full                  // One empty polygon, one full polygon
 //
 // Loops should be directed so that the region's interior is on the left.
 // Loops can be degenerate (they do not need to meet Loop requirements).

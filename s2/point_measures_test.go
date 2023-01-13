@@ -18,8 +18,8 @@ import (
 	"math"
 	"testing"
 
-	"github.com/golang/geo/r3"
-	"github.com/golang/geo/s1"
+	"github.com/rubenpoppe/geo/r3"
+	"github.com/rubenpoppe/geo/s1"
 )
 
 var (
@@ -127,7 +127,6 @@ func TestPointMeasuresPointAreaQuarterHemisphere(t *testing.T) {
 }
 
 func TestPointMeasuresAngleMethods(t *testing.T) {
-
 	tests := []struct {
 		a, b, c       Point
 		wantAngle     s1.Angle

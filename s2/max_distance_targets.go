@@ -17,7 +17,7 @@ package s2
 import (
 	"math"
 
-	"github.com/golang/geo/s1"
+	"github.com/rubenpoppe/geo/s1"
 )
 
 // maxDistance implements distance as the supplementary distance (Pi - x) to find
@@ -32,9 +32,11 @@ func (m maxDistance) less(other distance) bool  { return m.chordAngle() > other.
 func (m maxDistance) sub(other distance) distance {
 	return maxDistance(m.chordAngle() + other.chordAngle())
 }
+
 func (m maxDistance) chordAngleBound() s1.ChordAngle {
 	return s1.StraightChordAngle - m.chordAngle()
 }
+
 func (m maxDistance) updateDistance(dist distance) (distance, bool) {
 	if dist.less(m) {
 		m = maxDistance(dist.chordAngle())

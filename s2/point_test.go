@@ -18,8 +18,8 @@ import (
 	"math"
 	"testing"
 
-	"github.com/golang/geo/r3"
-	"github.com/golang/geo/s1"
+	"github.com/rubenpoppe/geo/r3"
+	"github.com/rubenpoppe/geo/s1"
 )
 
 func TestOriginPoint(t *testing.T) {
@@ -233,7 +233,6 @@ func TestPointRegion(t *testing.T) {
 	if !r.IntersectsCell(cell) {
 		t.Errorf("%v.IntersectsCell(%v) = false, want true", r, cell)
 	}
-
 }
 
 func TestPointRotate(t *testing.T) {

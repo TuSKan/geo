@@ -19,7 +19,7 @@ import (
 	"math"
 	"testing"
 
-	"github.com/golang/geo/s1"
+	"github.com/rubenpoppe/geo/s1"
 )
 
 func TestKmToAngle(t *testing.T) {
@@ -56,7 +56,6 @@ func TestTestingFractal(t *testing.T) {
 		maxLevel  int
 		dimension float64
 	}{
-
 		{
 			label:     "TriangleFractal",
 			minLevel:  7,

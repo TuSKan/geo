@@ -18,9 +18,9 @@ import (
 	"math"
 	"testing"
 
-	"github.com/golang/geo/r1"
-	"github.com/golang/geo/r3"
-	"github.com/golang/geo/s1"
+	"github.com/rubenpoppe/geo/r1"
+	"github.com/rubenpoppe/geo/r3"
+	"github.com/rubenpoppe/geo/s1"
 )
 
 func rectBoundForPoints(a, b Point) Rect {
@@ -32,8 +32,10 @@ func rectBoundForPoints(a, b Point) Rect {
 
 func TestRectBounderMaxLatitudeSimple(t *testing.T) {
 	cubeLat := math.Asin(1 / math.Sqrt(3)) // 35.26 degrees
-	cubeLatRect := Rect{r1.IntervalFromPoint(-cubeLat).AddPoint(cubeLat),
-		s1.IntervalFromEndpoints(-math.Pi/4, math.Pi/4)}
+	cubeLatRect := Rect{
+		r1.IntervalFromPoint(-cubeLat).AddPoint(cubeLat),
+		s1.IntervalFromEndpoints(-math.Pi/4, math.Pi/4),
+	}
 
 	tests := []struct {
 		a, b Point

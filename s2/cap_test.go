@@ -18,8 +18,8 @@ import (
 	"math"
 	"testing"
 
-	"github.com/golang/geo/r3"
-	"github.com/golang/geo/s1"
+	"github.com/rubenpoppe/geo/r3"
+	"github.com/rubenpoppe/geo/s1"
 )
 
 const (
@@ -292,7 +292,7 @@ func TestCapRadiusToHeight(t *testing.T) {
 
 func TestCapRectBounds(t *testing.T) {
 	const epsilon = 1e-13
-	var tests = []struct {
+	tests := []struct {
 		desc     string
 		have     Cap
 		latLoDeg float64

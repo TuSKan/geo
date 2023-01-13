@@ -19,8 +19,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/golang/geo/r1"
-	"github.com/golang/geo/s1"
+	"github.com/rubenpoppe/geo/r1"
+	"github.com/rubenpoppe/geo/s1"
 )
 
 func TestCellUnionDuplicateCellsNotValid(t *testing.T) {
@@ -134,7 +134,6 @@ func TestCellUnionBasic(t *testing.T) {
 	if got := face1Union.ContainsCell(face2Cell); got {
 		t.Errorf("%v.ContainsCell(%v) = %t, want %t", face1Union, face2Cell, got, false)
 	}
-
 }
 
 func TestCellUnion(t *testing.T) {

@@ -18,9 +18,9 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/golang/geo/r1"
-	"github.com/golang/geo/r3"
-	"github.com/golang/geo/s1"
+	"github.com/rubenpoppe/geo/r1"
+	"github.com/rubenpoppe/geo/r3"
+	"github.com/rubenpoppe/geo/s1"
 )
 
 func TestTextFormatWritePoints(t *testing.T) {
@@ -402,7 +402,6 @@ func TestTextFormatMakeLaxPolygonFullWithHole(t *testing.T) {
 	}
 	if got, want := shape.numLoopVertices(1), 1; got != want {
 		t.Errorf("laxPolygon.numLoopVertices(%d) = %d, want %d", 1, got, want)
-
 	}
 	if got, want := shape.NumEdges(), 1; got != want {
 		t.Errorf("laxPolygon.NumEdges() = %d, want %d", got, want)

@@ -19,14 +19,12 @@ import (
 	"io"
 	"math"
 
-	"github.com/golang/geo/r1"
-	"github.com/golang/geo/s1"
+	"github.com/rubenpoppe/geo/r1"
+	"github.com/rubenpoppe/geo/s1"
 )
 
-var (
-	// centerPoint is the default center for Caps
-	centerPoint = PointFromCoords(1.0, 0, 0)
-)
+// centerPoint is the default center for Caps
+var centerPoint = PointFromCoords(1.0, 0, 0)
 
 // Cap represents a disc-shaped region defined by a center and radius.
 // Technically this shape is called a "spherical cap" (rather than disc)
@@ -52,10 +50,10 @@ var (
 // radius (r), the maximum chord length from the cap's center (d), and the
 // radius of cap's base (a).
 //
-//     h = 1 - cos(r)
-//       = 2 * sin^2(r/2)
-//   d^2 = 2 * h
-//       = a^2 + h^2
+//	  h = 1 - cos(r)
+//	    = 2 * sin^2(r/2)
+//	d^2 = 2 * h
+//	    = a^2 + h^2
 //
 // The zero value of Cap is an invalid cap. Use EmptyCap to get a valid empty cap.
 type Cap struct {
@@ -334,7 +332,6 @@ func radiusToHeight(r s1.Angle) float64 {
 		return float64(s1.RightChordAngle)
 	}
 	return float64(0.5 * s1.ChordAngleFromAngle(r))
-
 }
 
 // ContainsCell reports whether the cap contains the given cell.
