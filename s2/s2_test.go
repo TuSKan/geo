@@ -141,6 +141,7 @@ func randomCellUnion(n int) CellUnion {
 	for i := 0; i < n; i++ {
 		cu = append(cu, randomCellID())
 	}
+	cu.Normalize()
 	return cu
 }
 
