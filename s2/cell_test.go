@@ -261,9 +261,9 @@ func testCellChildren(t *testing.T, cell Cell) {
 
 func TestCellAreas(t *testing.T) {
 	// relative error bounds for each type of area computation
-	var exactError = math.Log(1 + 1e-6)
-	var approxError = math.Log(1.03)
-	var avgError = math.Log(1 + 1e-15)
+	exactError := math.Log(1 + 1e-6)
+	approxError := math.Log(1.03)
+	avgError := math.Log(1 + 1e-15)
 
 	// Test 1. Check the area of a top level cell.
 	const level1Cell = CellID(0x1000000000000000)
@@ -559,7 +559,6 @@ func TestCellDistance(t *testing.T) {
 		if expectedMax.Radians() <= math.Pi/3 {
 			if !float64Near(expectedMax.Radians(), actualMax.Radians(), 1e-15) {
 				t.Errorf("%v.MaxDistance(%v) = %v, want %v", cell, target, actualMax.Radians(), expectedMax.Radians())
-
 			}
 		}
 	}
@@ -725,6 +724,50 @@ func TestCellMaxDistanceToCell(t *testing.T) {
 	}
 }
 
-// TODO(roberts): Differences from C++.
-// CellVsLoopRectBound
-// RectBoundIsLargeEnough
+// This test verifies that the S2Cell and S2Loop bounds contain each other
+// to within their maximum errors.
+//
+// The S2Cell and S2Loop calculations for the latitude of a vertex can differ
+// by up to 2 * dblEpsilon, therefore the S2Cell bound should never exceed
+// the S2Loop bound by more than this (the reverse is not true, because the
+// S2Loop code sometimes thinks that the maximum occurs along an edge).
+// Similarly, the longitude bounds can differ by up to 4 * dblEpsilon since
+// the S2Cell bound has an error of 2 * dblEpsilon and then expands by this
+// amount, while the S2Loop bound does no expansion at all.
+func TestCellVsLoopBound(t *testing.T) {
+	cellError := LatLngFromRadians(2*dblEpsilon, 4*dblEpsilon)
+	loopError := NewRectBounder().maxErrorForTests()
+
+	for i := 0; i < 1000; i++ {
+		cell := CellFromCellID(randomCellID())
+		loop := LoopFromCell(cell)
+		cellBound := cell.RectBound()
+		loopBound := loop.RectBound()
+
+		if !loopBound.expanded(cellError).Contains(cellBound) {
+			t.Errorf("expanded loop RectBound contains the cell's RectBound, but shouldn't")
+		}
+		if !cellBound.expanded(loopError).Contains(loopBound) {
+			t.Errorf("expanded cell RectBound contains the loop's RectBound, but shouldn't")
+		}
+	}
+}
+
+// Construct many points that are nearly on an S2Cell edge, and verify that
+// whenever the cell contains a point P then its bound contains S2LatLng(P).
+func TestRectBoundIsLargeEnough(t *testing.T) {
+	for i := 0; i < 1000; {
+		cell := CellFromCellID(randomCellID())
+		rand := randomUniformInt(3)
+		v1 := cell.Vertex(rand)
+		v2 := samplePointFromCap(Cap{cell.Vertex(rand + 1), s1.ChordAngle(s1.Angle.Radians(1e-15))})
+		p := Interpolate(randomFloat64(), v1, v2)
+
+		if LoopFromCell(cell).ContainsPoint(p) {
+			if !cell.RectBound().ContainsLatLng(LatLngFromPoint(p)) {
+				t.Errorf("the cell's RectBound contains LatLng for %v, but shouldn't", p)
+			}
+			i++
+		}
+	}
+}
