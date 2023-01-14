@@ -39,43 +39,43 @@ import (
 // radians, i.e. A and B are within "x" radians of being antipodal. The
 // corresponding chord length is
 //
-//    r = 2 * sin((π - x) / 2) = 2 * cos(x / 2)
+//	r = 2 * sin((π - x) / 2) = 2 * cos(x / 2)
 //
 // For values of x not close to π the relative error in the squared chord
 // length is at most 4.5 * dblEpsilon (see MaxPointError below).
 // The relative error in "r" is thus at most 2.25 * dblEpsilon ~= 5e-16. To
 // convert this error into an equivalent angle, we have
 //
-//    |dr / dx| = sin(x / 2)
+//	|dr / dx| = sin(x / 2)
 //
 // and therefore
 //
-//    |dx| = dr / sin(x / 2)
-//         = 5e-16 * (2 * cos(x / 2)) / sin(x / 2)
-//         = 1e-15 / tan(x / 2)
+//	|dx| = dr / sin(x / 2)
+//	     = 5e-16 * (2 * cos(x / 2)) / sin(x / 2)
+//	     = 1e-15 / tan(x / 2)
 //
 // The maximum error is attained when
 //
-//    x  = |dx|
-//       = 1e-15 / tan(x / 2)
-//      ~= 1e-15 / (x / 2)
-//      ~= sqrt(2e-15)
+//	x  = |dx|
+//	   = 1e-15 / tan(x / 2)
+//	  ~= 1e-15 / (x / 2)
+//	  ~= sqrt(2e-15)
 //
 // In summary, the measurement error for an angle (π - x) is at most
 //
-//    dx  = min(1e-15 / tan(x / 2), sqrt(2e-15))
-//      (~= min(2e-15 / x, sqrt(2e-15)) when x is small)
+//	dx  = min(1e-15 / tan(x / 2), sqrt(2e-15))
+//	  (~= min(2e-15 / x, sqrt(2e-15)) when x is small)
 //
 // On the Earth's surface (assuming a radius of 6371km), this corresponds to
 // the following worst-case measurement errors:
 //
-//     Accuracy:             Unless antipodal to within:
-//     ---------             ---------------------------
-//     6.4 nanometers        10,000 km (90 degrees)
-//     1 micrometer          81.2 kilometers
-//     1 millimeter          81.2 meters
-//     1 centimeter          8.12 meters
-//     28.5 centimeters      28.5 centimeters
+//	Accuracy:             Unless antipodal to within:
+//	---------             ---------------------------
+//	6.4 nanometers        10,000 km (90 degrees)
+//	1 micrometer          81.2 kilometers
+//	1 millimeter          81.2 meters
+//	1 centimeter          8.12 meters
+//	28.5 centimeters      28.5 centimeters
 //
 // The representational and conversion errors referred to earlier are somewhat
 // smaller than this. For example, maximum distance between adjacent
@@ -84,11 +84,11 @@ import (
 // r^2 =  4 * (1 - dblEpsilon / 2). Thus r = 2 * (1 - dblEpsilon / 4) and
 // the angle between these two representable values is
 //
-//    x  = 2 * acos(r / 2)
-//       = 2 * acos(1 - dblEpsilon / 4)
-//      ~= 2 * asin(sqrt(dblEpsilon / 2)
-//      ~= sqrt(2 * dblEpsilon)
-//      ~= 2.1e-8
+//	x  = 2 * acos(r / 2)
+//	   = 2 * acos(1 - dblEpsilon / 4)
+//	  ~= 2 * asin(sqrt(dblEpsilon / 2)
+//	  ~= sqrt(2 * dblEpsilon)
+//	  ~= 2.1e-8
 //
 // which is 13.5 cm on the Earth's surface.
 //
@@ -97,11 +97,11 @@ import (
 // r^2 = (4 * (1 - dblEpsilon / 4)), thus r = 2 * (1 - dblEpsilon / 8) and
 // the worst case rounding error is
 //
-//    x  = 2 * acos(r / 2)
-//       = 2 * acos(1 - dblEpsilon / 8)
-//      ~= 2 * asin(sqrt(dblEpsilon / 4)
-//      ~= sqrt(dblEpsilon)
-//      ~= 1.5e-8
+//	x  = 2 * acos(r / 2)
+//	   = 2 * acos(1 - dblEpsilon / 8)
+//	  ~= 2 * asin(sqrt(dblEpsilon / 4)
+//	  ~= sqrt(dblEpsilon)
+//	  ~= 1.5e-8
 //
 // which is 9.5 cm on the Earth's surface.
 type ChordAngle float64
@@ -122,6 +122,12 @@ const (
 	// maxLength2 is the square of the maximum length allowed in a ChordAngle.
 	maxLength2 = 4.0
 )
+
+// Radians returns the ChordAngle in radians.
+func (c ChordAngle) Radians() float64 { return c.Angle().Radians() }
+
+// Degrees returns the ChordAngle in degrees.
+func (c ChordAngle) Degrees() float64 { return c.Angle().Degrees() }
 
 // ChordAngleFromAngle returns a ChordAngle from the given Angle.
 func ChordAngleFromAngle(a Angle) ChordAngle {
@@ -148,8 +154,9 @@ func ChordAngleFromSquaredLength(length2 float64) ChordAngle {
 // Expanded returns a new ChordAngle that has been adjusted by the given error
 // bound (which can be positive or negative). Error should be the value
 // returned by either MaxPointError or MaxAngleError. For example:
-//    a := ChordAngleFromPoints(x, y)
-//    a1 := a.Expanded(a.MaxPointError())
+//
+//	a := ChordAngleFromPoints(x, y)
+//	a1 := a.Expanded(a.MaxPointError())
 func (c ChordAngle) Expanded(e float64) ChordAngle {
 	// If the angle is special, don't change it. Otherwise clamp it to the valid range.
 	if c.isSpecial() {
@@ -195,9 +202,10 @@ func (c ChordAngle) isValid() bool {
 // This can be used to convert a "<" comparison to a "<=" comparison.
 //
 // Note the following special cases:
-//   NegativeChordAngle.Successor == 0
-//   StraightChordAngle.Successor == InfChordAngle
-//   InfChordAngle.Successor == InfChordAngle
+//
+//	NegativeChordAngle.Successor == 0
+//	StraightChordAngle.Successor == InfChordAngle
+//	InfChordAngle.Successor == InfChordAngle
 func (c ChordAngle) Successor() ChordAngle {
 	if c >= maxLength2 {
 		return InfChordAngle()
@@ -211,9 +219,10 @@ func (c ChordAngle) Successor() ChordAngle {
 // Predecessor returns the largest representable ChordAngle less than this one.
 //
 // Note the following special cases:
-//   InfChordAngle.Predecessor == StraightChordAngle
-//   ChordAngle(0).Predecessor == NegativeChordAngle
-//   NegativeChordAngle.Predecessor == NegativeChordAngle
+//
+//	InfChordAngle.Predecessor == StraightChordAngle
+//	ChordAngle(0).Predecessor == NegativeChordAngle
+//	NegativeChordAngle.Predecessor == NegativeChordAngle
 func (c ChordAngle) Predecessor() ChordAngle {
 	if c <= 0 {
 		return NegativeChordAngle
@@ -314,7 +323,15 @@ func (c ChordAngle) Tan() float64 {
 	return c.Sin() / c.Cos()
 }
 
-// TODO(roberts): Differences from C++:
-//   Helpers to/from E5/E6/E7
-//   Helpers to/from degrees and radians directly.
-//   FastUpperBoundFrom(angle Angle)
+// E5 returns the ChordAngle in hundred thousandths of degrees.
+func (c ChordAngle) E5() int32 { return round(c.Degrees() * 1e5) }
+
+// E6 returns the ChordAngle in hundred thousandths of degrees.
+func (c ChordAngle) E6() int32 { return round(c.Degrees() * 1e6) }
+
+// E7 returns the ChordAngle in hundred thousandths of degrees.
+func (c ChordAngle) E7() int32 { return round(c.Degrees() * 1e5) }
+
+func (c ChordAngle) FastUpperBoundFrom(angle Angle) ChordAngle {
+	return ChordAngleFromSquaredLength(angle.Radians() * angle.Radians())
+}
