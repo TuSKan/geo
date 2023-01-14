@@ -174,5 +174,27 @@ func TestContainsPointQueryContainingShapes(t *testing.T) {
 	}
 }
 
-// TODO(roberts): Remaining tests
-// TestContainsPointQueryVisitIncidentEdges
+func TestContainsPointQueryVisitIncidentEdges(t *testing.T) {
+	tests := []struct {
+		pt   Point
+		want []ShapeEdgeID
+	}{
+		{parsePoint("0:0"), []ShapeEdgeID{{0, 0}}},
+		{parsePoint("1:1"), []ShapeEdgeID{{0, 1}, {1, 0}}},
+		{parsePoint("1:2"), []ShapeEdgeID{{1, 0}, {2, 0}, {2, 2}}},
+		{parsePoint("1:3"), []ShapeEdgeID{{2, 0}, {2, 1}}},
+		{parsePoint("2:2"), []ShapeEdgeID{{2, 1}, {2, 2}}},
+	}
+
+	index := makeShapeIndex("0:0 | 1:1 # 1:1, 1:2 # 1:2, 1:3, 2:2")
+	for _, test := range tests {
+		q := NewContainsPointQuery(index, VertexModelClosed)
+		var actual []ShapeEdgeID
+		if !q.visitIncidentEdges(test.pt, func(shape ShapeEdge) bool {
+			actual = append(actual, shape.ID)
+			return true
+		}) || !reflect.DeepEqual(actual, test.want) {
+			t.Errorf("%v: shape edges not equal but should be.  %v != %v", test.pt, actual, test.want)
+		}
+	}
+}
