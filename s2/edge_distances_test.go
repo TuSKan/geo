@@ -110,7 +110,8 @@ func TestEdgeDistancesCheckDistance(t *testing.T) {
 			a:       r3.Vector{1, 0, 0},
 			b:       r3.Vector{0, 1, 0},
 			distRad: math.Asin(math.Sqrt(1.0 / 3.0)),
-			want:    r3.Vector{1, 1, 0}},
+			want:    r3.Vector{1, 1, 0},
+		},
 		{
 			x:       r3.Vector{-1, 0, 0},
 			a:       r3.Vector{1, 1, 0},
@@ -180,7 +181,6 @@ func TestEdgeDistancesUpdateMinInteriorDistanceLowerBoundOptimizationIsConservat
 	if !ok {
 		t.Errorf("UpdateMinDistance(%v, %v, %v, %v) = %v, want %v", x, a, b, s1.InfChordAngle(), minDistance, minDistance)
 	}
-
 }
 
 func TestEdgeDistancesUpdateMinInteriorDistanceRejectionTestIsConservative(t *testing.T) {
@@ -197,7 +197,6 @@ func TestEdgeDistancesUpdateMinInteriorDistanceRejectionTestIsConservative(t *te
 		want    bool
 	}{
 		{
-
 			x:       Point{r3.Vector{1, -4.6547732744037044e-11, -5.6374428459823598e-89}},
 			a:       Point{r3.Vector{1, -8.9031850507928352e-11, 0}},
 			b:       Point{r3.Vector{-0.99999999999996347, 2.7030110029169596e-07, 1.555092348806121e-99}},
@@ -704,7 +703,6 @@ func TestEdgeDistancesEdgePairMaxDistance(t *testing.T) {
 			distRads: math.Acos(1 / math.Sqrt(3)),
 		},
 		{
-
 			// One edge is degenerate.
 			a0:       PointFromCoords(1, 0, 1),
 			a1:       PointFromCoords(1, 0, 1),
@@ -783,9 +781,170 @@ func TestEdgeDistancesEdgePairMaxDistance(t *testing.T) {
 		}
 		if !float64Near(test.distRads, maxDist.Angle().Radians(), epsilon) {
 			t.Errorf("maxDist %v - %v = %v, want < %v", test.distRads, maxDist.Angle().Radians(), (test.distRads - maxDist.Angle().Radians()), epsilon)
-
 		}
 	}
 }
 
-// TestEdgeDistancesEdgeBNearEdgeA
+func TestEdgeBNearEdgeA(t *testing.T) {
+	tests := []struct {
+		desc      string
+		points    []Point
+		tolerance float64
+		want      bool
+	}{
+		{
+			desc:      "Edge is near itself",
+			points:    parsePoints("5:5, 10:-5, 5:5, 10:-5"),
+			tolerance: 1e-6,
+			want:      true,
+		},
+		{
+			desc:      "Edge is near its reverse",
+			points:    parsePoints("5:5, 10:-5, 10:-5, 5:5"),
+			tolerance: 1e-6,
+			want:      true,
+		},
+		{
+			desc:      "Short edge is near long edge",
+			points:    parsePoints("10:0, -10:0, 2:1, -2:1"),
+			tolerance: 1,
+			want:      true,
+		},
+		{
+			desc:      "Long edges cannot be near shorter edges",
+			points:    parsePoints("2:1, -2:1, 10:0, -10:0"),
+			tolerance: 1,
+			want:      false,
+		},
+		{
+			desc:      "Orthogonal crossing edges are not near each other",
+			points:    parsePoints("10:0, -10:0, 0:1.5, 0:-1.5"),
+			tolerance: 1,
+			want:      false,
+		},
+		{
+			desc:      "Orthogonal crossing edges are not near each other within tolerance",
+			points:    parsePoints("10:0, -10:0, 0:1.5, 0:-1.5"),
+			tolerance: 2,
+			want:      true,
+		},
+
+		// An implementation that only considers the vertices of polylines
+		// will incorrectly consider such edges as "close" when they are not.
+		// Consider, for example, two consecutive lines of longitude. As they
+		// approach the poles, they become arbitrarily close together, but along the
+		// equator they bow apart.
+		{
+			desc:      "Very long edges whose endpoints are close may have interior points that are far apart",
+			points:    parsePoints("89:1, -89:1, 89:2, -89:2"),
+			tolerance: 0.5,
+			want:      false,
+		},
+		{
+			desc:      "Very long edges whose endpoints are close may have interior points that are far apart",
+			points:    parsePoints("89:1, -89:1, 89:2, -89:2"),
+			tolerance: 1.5,
+			want:      true,
+		},
+		// Make sure that the result is independent of the edge directions.
+		{
+			desc:      "Very long edges whose endpoints are close may have interior points that are far apart",
+			points:    parsePoints("89:1, -89:1, -89:2, 89:2"),
+			tolerance: 1.5,
+			want:      true,
+		},
+
+		// Cases where the point that achieves the maximum distance to A is the
+		// interior point of B that is equidistant from the endpoints of A.  This
+		// requires two long edges A and B whose endpoints are near each other but
+		// where B intersects the perpendicular bisector of the endpoints of A in
+		// the hemisphere opposite A's midpoint. Furthermore these cases are
+		// constructed so that the points where circ(A) is furthest from circ(B) do
+		// not project onto the interior of B.
+		{
+			desc:      "Case where the point that achieves the maximum distance to A is the interior point of B that is equidistant from the endpoints of A",
+			points:    parsePoints("0:-100, 0:100, 5:-80, -5:80"),
+			tolerance: 70,
+			want:      false,
+		},
+		{
+			desc:      "Case where the point that achieves the maximum distance to A is the interior point of B that is equidistant from the endpoints of A",
+			points:    parsePoints("0:-100, 0:100, 1:-35, 10:35"),
+			tolerance: 70,
+			want:      false,
+		},
+		// Make sure that the result is independent of the edge directions.
+		{
+			desc:      "Case where the point that achieves the maximum distance to A is the interior point of B that is equidistant from the endpoints of A",
+			points:    parsePoints("0:-100, 0:100, 5:80, -5:-80"),
+			tolerance: 70,
+			want:      false,
+		},
+
+		// The two arcs here are nearly as long as S2 edges can be (just shy of 180
+		// degrees), and their endpoints are less than 1 degree apart. Their
+		// midpoints, however, are at opposite ends of the sphere along its equator.
+		{
+			desc:      "Two arcs nearly as long as S2 edges can be",
+			points:    parsePoints("0:-179.75, 0:-0.25, 0:179.75, 0:0.25"),
+			tolerance: 1,
+			want:      false,
+		},
+
+		// At the equator, the second arc here is 9.75 degrees from the first, and
+		// closer at all other points. However, the southern point of the second arc
+		// (-1, 9.75) is too far from the first arc for the short-circuiting logic in
+		// IsEdgeBNearEdgeA to apply.
+		{
+			desc:      "Southern point of the second arc is too far from the first arc",
+			points:    parsePoints("40:0, -5:0, 39:0.975, -1:0.975"),
+			tolerance: 1,
+			want:      true,
+		},
+		// Same as above, but B's orientation is reversed, causing the angle between
+		// the normal vectors of circ(B) and circ(A) to be (180-9.75) = 170.5 degrees,
+		// not 9.75 degrees. The greatest separation between the planes is still 9.75
+		// degrees.
+		{
+			desc:      "Southern point of the second arc is too far from the first arc (B reversed)",
+			points:    parsePoints("10:0, -10:0, -.4:0.975, 0.4:0.975"),
+			tolerance: 1,
+			want:      true,
+		},
+
+		// A and B are on the same great circle, A and B partially overlap, but the
+		// only part of B that does not overlap A is shorter than tolerance.
+		{
+			desc:      "A and B are on the same great circle, A and B partially overlap",
+			points:    parsePoints("0:0, 1:0, 0.9:0, 1.1:0"),
+			tolerance: 0.25,
+			want:      true,
+		},
+		// A and B are on the same great circle, all points on B are close to A at its
+		// second endpoint, (1,0).
+		{
+			desc:      "A and B are on the same great circle, all points on B are close to A",
+			points:    parsePoints("0:0, 1:0, 1.1:0, 1.2:0"),
+			tolerance: 0.25,
+			want:      true,
+		},
+		// Same as above, but B's orientation is reversed. This case is special
+		// because the projection of the normal defining A onto the plane containing B
+		// is the null vector, and must be handled by a special case.
+		{
+			desc:      "A and B are on the same great circle, all points on B are close to A (B reversed)",
+			points:    parsePoints("0:0, 1:0, 1.2:0, 1.1:0"),
+			tolerance: 0.25,
+			want:      true,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
+			points := test.points
+			tolerance := s1.Angle(test.tolerance) * s1.Degree
+			if got := IsEdgeBNearEdgeA(points[0], points[1], points[2], points[3], tolerance); got != test.want {
+				t.Errorf("%s", test.desc)
+			}
+		})
+	}
+}
