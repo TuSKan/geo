@@ -148,7 +148,7 @@ var (
 		lineTriangle,
 		skinnyChevron,
 		loopA,
-		//snappedLoopA, // Fails TestAreaConsistentWithTurningAngle
+		// snappedLoopA, // Fails TestAreaConsistentWithTurningAngle
 		loopB,
 		aIntersectB,
 		aUnionB,
@@ -278,7 +278,6 @@ func TestLoopHoleAndSign(t *testing.T) {
 	if l.Sign() == -1 {
 		t.Errorf("loop with even depth should have a sign of +1")
 	}
-
 }
 
 func TestLoopRectBound(t *testing.T) {
@@ -1519,7 +1518,7 @@ func TestLoopTurningAngle(t *testing.T) {
 	// The spiral consists of two arms defining opposite sides of the loop.
 	const armPoints = 10000 // Number of vertices in each "arm"
 	const armRadius = 0.01  // Radius of spiral.
-	var vertices = make([]Point, 2*armPoints)
+	vertices := make([]Point, 2*armPoints)
 
 	// Set the center point of the spiral.
 	vertices[armPoints] = PointFromCoords(0, 0, 1)
@@ -1816,4 +1815,195 @@ func BenchmarkLoopContainsPoint(b *testing.B) {
 			})
 		vertices *= 2
 	}
+}
+
+func checkLoopDistance(t *testing.T, loop *Loop, point, boundary Point) {
+	maxError := s1.Angle(1e-15)
+
+	if boundary == (Point{}) {
+		boundary = point
+	}
+
+	if distance := boundary.Distance(loop.ProjectToBoundary(point)); distance > maxError {
+		t.Errorf("distance = %v , want < %v", distance, maxError)
+	}
+
+	if loop.isEmptyOrFull() {
+		if distance := loop.DistanceToBoundary(point); distance != s1.InfAngle() {
+			t.Errorf("distance = %f, want %f", distance, s1.InfAngle())
+		}
+	} else {
+		if !float64Near(point.Distance(boundary).Degrees(), loop.DistanceToBoundary(point).Degrees(), maxError.Degrees()) {
+			t.Errorf("distance and distance to boundary not close enough, got %f, want %f",
+				point.Distance(boundary).Degrees(), loop.DistanceToBoundary(point).Degrees())
+		}
+	}
+
+	if loop.ContainsPoint(point) {
+		if distance := loop.DistanceToPoint(point); distance != 0 {
+			t.Errorf("distance to point = %f, want 0", distance)
+		}
+		if point != loop.Project(point) {
+			t.Errorf("expected point to be equal to it's projection")
+		}
+	} else {
+		if loop.DistanceToBoundary(point) != loop.DistanceToPoint(point) {
+			t.Errorf("distance to boundary and distance to point not close enough, got %f, want %f",
+				loop.DistanceToBoundary(point).Degrees(), loop.DistanceToPoint(point).Degrees())
+		}
+		if loop.ProjectToBoundary(point) != loop.Project(point) {
+			t.Errorf("expected projection to boundary to be equal to loop projection")
+		}
+	}
+}
+
+func TestLoopDistance(t *testing.T) {
+	checkLoopDistance(t, EmptyLoop(), PointFromCoords(0, 1, 0), Point{})
+	checkLoopDistance(t, FullLoop(), PointFromCoords(0, 1, 0), Point{})
+
+	// A CCW square around the LatLng point (0,0). Note that because lines of
+	// latitude are curved on the sphere, it is not straightforward to project
+	// points onto any edge except along the equator. (The equator is the only
+	// line of latitude that is also a geodesic.)
+	square := LoopFromPoints(parsePoints("-1:-1, -1:1, 1:1, 1:-1"))
+	if !square.IsNormalized() {
+		t.Errorf("expected square to be normalized")
+	}
+
+	tests := []struct {
+		desc            string
+		point, boundary Point
+	}{
+		{
+			desc:     "Vertex",
+			point:    PointFromLatLng(LatLngFromDegrees(1, -1)),
+			boundary: Point{},
+		},
+		{
+			desc:     "Point on one of the edges",
+			point:    PointFromLatLng(LatLngFromDegrees(0.5, 1)),
+			boundary: Point{},
+		},
+		{
+			desc:     "Point inside the square",
+			point:    PointFromLatLng(LatLngFromDegrees(0, 0.5)),
+			boundary: PointFromLatLng(LatLngFromDegrees(0, 1)),
+		},
+		{
+			desc:     "Point outside the square that projects onto an edge",
+			point:    PointFromLatLng(LatLngFromDegrees(0, -2)),
+			boundary: PointFromLatLng(LatLngFromDegrees(0, -1)),
+		},
+		{
+			desc:     "Point outside the square that projects onto a vertex",
+			point:    PointFromLatLng(LatLngFromDegrees(3, 4)),
+			boundary: PointFromLatLng(LatLngFromDegrees(1, 1)),
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
+			checkLoopDistance(t, square, test.point, test.boundary)
+		})
+	}
+}
+
+func checkLoopNear(t *testing.T, aString, bString string, maxError s1.Angle, expected bool) {
+	a := LoopFromPoints(parsePoints(aString))
+	b := LoopFromPoints(parsePoints(bString))
+
+	if near := a.boundaryNear(b, maxError); near != expected {
+		t.Errorf("expected boundary to be %v, got %v", expected, near)
+	}
+	if near := b.boundaryNear(a, maxError); near != expected {
+		t.Errorf("expected boundary to be %v, got %v", expected, near)
+	}
+}
+
+func TestLoopBoundaryNear(t *testing.T) {
+	tests := []struct {
+		a, b     string
+		maxError s1.Angle
+		expected bool
+	}{
+		{
+			a:        "0:0, 0:10, 5:5",
+			b:        "0:0.1, -0.1:9.9, 5:5.2",
+			maxError: 0.5 * s1.Degree,
+			expected: true,
+		},
+		{
+			a:        "0:0, 0:3, 0:7, 0:10, 3:7, 5:5",
+			b:        "0:0, 0:10, 2:8, 5:5, 4:4, 3:3, 1:1",
+			maxError: 1e-3,
+			expected: true,
+		},
+		// All vertices close to some edge, but not equivalent.
+		{
+			a:        "0:0, 0:2, 2:2, 2:0",
+			b:        "0:0, 1.9999:1, 0:2, 2:2, 2:0",
+			maxError: 0.5 * s1.Degree,
+			expected: false,
+		},
+		{
+			a:        "0.1:0, 0.1:1, 0.1:2, 0.1:3, 0.1:4, 1:4, 2:4, 3:4, 2:4.1, 1:4.1, 2:4.2, 3:4.2, 4:4.2, 5:4.2",
+			b:        "0:0, 0:1, 0:2, 0:3, 0.1:2, 0.1:1, 0.2:2, 0.2:3, 0.2:4, 1:4.1, 2:4, 3:4, 4:4, 5:4",
+			maxError: 1.5 * s1.Degree,
+			expected: true,
+		},
+		{
+			a:        "0.1:0, 0.1:1, 0.1:2, 0.1:3, 0.1:4, 1:4, 2:4, 3:4, 2:4.1, 1:4.1, 2:4.2, 3:4.2, 4:4.2, 5:4.2",
+			b:        "0:0, 0:1, 0:2, 0:3, 0.1:2, 0.1:1, 0.2:2, 0.2:3, 0.2:4, 1:4.1, 2:4, 3:4, 4:4, 5:4",
+			maxError: 0.5 * s1.Degree,
+			expected: false,
+		},
+	}
+	for _, test := range tests {
+		t.Run("", func(t *testing.T) {
+			checkLoopNear(t, test.a, test.b, test.maxError, test.expected)
+		})
+	}
+}
+
+func checkEmptyFullSnapped(t *testing.T, loop *Loop, level int) {
+	cellID := cellIDFromPoint(loop.vertices[0]).Parent(level)
+	vertices := []Point{cellID.Point()}
+	loop2 := LoopFromPoints(vertices)
+
+	if !loop.BoundaryEqual(loop2) {
+		t.Errorf("expected boundary to be equal")
+	}
+	if !loop.BoundaryApproxEqual(loop2) {
+		t.Errorf("expected boundary to be approximately equal")
+	}
+	if !loop.BoundaryNear(loop2) {
+		t.Errorf("expected boundary to be near")
+	}
+}
+
+func checkEmptyFullLatLng(t *testing.T, loop *Loop) {
+	cellID := cellIDFromPoint(loop.vertices[0])
+	vertices := []Point{cellID.Point()}
+	loop2 := LoopFromPoints(vertices)
+
+	if !loop.BoundaryEqual(loop2) {
+		t.Errorf("expected boundary to be equal")
+	}
+	if !loop.BoundaryApproxEqual(loop2) {
+		t.Errorf("expected boundary to be approximately equal")
+	}
+	if !loop.BoundaryNear(loop2) {
+		t.Errorf("expected boundary to be near")
+	}
+}
+
+func checkEmptyFullConversion(t *testing.T, loop *Loop) {
+	checkEmptyFullSnapped(t, loop, maxLevel)
+	checkEmptyFullSnapped(t, loop, 1)
+	checkEmptyFullSnapped(t, loop, 0)
+	checkEmptyFullLatLng(t, loop)
+}
+
+func TestEmptyFullLossyConversion(t *testing.T) {
+	checkEmptyFullConversion(t, EmptyLoop())
+	checkEmptyFullConversion(t, FullLoop())
 }
