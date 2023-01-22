@@ -26,49 +26,49 @@ import (
 
 var (
 	// The northern hemisphere, defined using two pairs of antipodal points.
-	northHemi = LoopFromPoints(parsePoints("0:-180, 0:-90, 0:0, 0:90"))
+	northHemi = makeLoop("0:-180, 0:-90, 0:0, 0:90")
 
 	// The northern hemisphere, defined using three points 120 degrees apart.
-	northHemi3 = LoopFromPoints(parsePoints("0:-180, 0:-60, 0:60"))
+	northHemi3 = makeLoop("0:-180, 0:-60, 0:60")
 
 	// The southern hemisphere, defined using two pairs of antipodal points.
-	southHemi = LoopFromPoints(parsePoints("0:90, 0:0, 0:-90, 0:-180"))
+	southHemi = makeLoop("0:90, 0:0, 0:-90, 0:-180")
 
 	// The western hemisphere, defined using two pairs of antipodal points.
-	westHemi = LoopFromPoints(parsePoints("0:-180, -90:0, 0:0, 90:0"))
+	westHemi = makeLoop("0:-180, -90:0, 0:0, 90:0")
 
 	// The eastern hemisphere, defined using two pairs of antipodal points.
-	eastHemi = LoopFromPoints(parsePoints("90:0, 0:0, -90:0, 0:-180"))
+	eastHemi = makeLoop("90:0, 0:0, -90:0, 0:-180")
 
 	// The "near" hemisphere, defined using two pairs of antipodal points.
-	nearHemi = LoopFromPoints(parsePoints("0:-90, -90:0, 0:90, 90:0"))
+	nearHemi = makeLoop("0:-90, -90:0, 0:90, 90:0")
 
 	// The "far" hemisphere, defined using two pairs of antipodal points.
-	farHemi = LoopFromPoints(parsePoints("90:0, 0:90, -90:0, 0:-90"))
+	farHemi = makeLoop("90:0, 0:90, -90:0, 0:-90")
 
 	// A spiral stripe that slightly over-wraps the equator.
-	candyCane = LoopFromPoints(parsePoints("-20:150, -20:-70, 0:70, 10:-150, 10:70, -10:-70"))
+	candyCane = makeLoop("-20:150, -20:-70, 0:70, 10:-150, 10:70, -10:-70")
 
 	// A small clockwise loop in the northern & eastern hemisperes.
-	smallNECW = LoopFromPoints(parsePoints("35:20, 45:20, 40:25"))
+	smallNECW = makeLoop("35:20, 45:20, 40:25")
 
 	// Loop around the north pole at 80 degrees.
-	arctic80 = LoopFromPoints(parsePoints("80:-150, 80:-30, 80:90"))
+	arctic80 = makeLoop("80:-150, 80:-30, 80:90")
 
 	// Loop around the south pole at 80 degrees.
-	antarctic80 = LoopFromPoints(parsePoints("-80:120, -80:0, -80:-120"))
+	antarctic80 = makeLoop("-80:120, -80:0, -80:-120")
 
 	// A completely degenerate triangle along the equator that RobustCCW()
 	// considers to be CCW.
-	lineTriangle = LoopFromPoints(parsePoints("0:1, 0:2, 0:3"))
+	lineTriangle = makeLoop("0:1, 0:2, 0:3")
 
 	// A nearly-degenerate CCW chevron near the equator with very long sides
 	// (about 80 degrees).  Its area is less than 1e-640, which is too small
 	// to represent in double precision.
-	skinnyChevron = LoopFromPoints(parsePoints("0:0, -1e-320:80, 0:1e-320, 1e-320:80"))
+	skinnyChevron = makeLoop("0:0, -1e-320:80, 0:1e-320, 1e-320:80")
 
 	// A diamond-shaped loop around the point 0:180.
-	loopA = LoopFromPoints(parsePoints("0:178, -1:180, 0:-179, 1:-180"))
+	loopA = makeLoop("0:178, -1:180, 0:-179, 1:-180")
 
 	// Like loopA, but the vertices are at leaf cell centers.
 	snappedLoopA = LoopFromPoints([]Point{
@@ -79,27 +79,27 @@ var (
 	})
 
 	// A different diamond-shaped loop around the point 0:180.
-	loopB = LoopFromPoints(parsePoints("0:179, -1:180, 0:-178, 1:-180"))
+	loopB = makeLoop("0:179, -1:180, 0:-178, 1:-180")
 
 	// The intersection of A and B.
-	aIntersectB = LoopFromPoints(parsePoints("0:179, -1:180, 0:-179, 1:-180"))
+	aIntersectB = makeLoop("0:179, -1:180, 0:-179, 1:-180")
 
 	// The union of A and B.
-	aUnionB = LoopFromPoints(parsePoints("0:178, -1:180, 0:-178, 1:-180"))
+	aUnionB = makeLoop("0:178, -1:180, 0:-178, 1:-180")
 
 	// A minus B (concave).
-	aMinusB = LoopFromPoints(parsePoints("0:178, -1:180, 0:179, 1:-180"))
+	aMinusB = makeLoop("0:178, -1:180, 0:179, 1:-180")
 
 	// B minus A (concave).
-	bMinusA = LoopFromPoints(parsePoints("0:-179, -1:180, 0:-178, 1:-180"))
+	bMinusA = makeLoop("0:-179, -1:180, 0:-178, 1:-180")
 
 	// A shape gotten from A by adding a triangle to one edge, and
 	// subtracting a triangle from the opposite edge.
-	loopC = LoopFromPoints(parsePoints("0:178, 0:180, -1:180, 0:-179, 1:-179, 1:-180"))
+	loopC = makeLoop("0:178, 0:180, -1:180, 0:-179, 1:-179, 1:-180")
 
 	// A shape gotten from A by adding a triangle to one edge, and
 	// adding another triangle to the opposite edge.
-	loopD = LoopFromPoints(parsePoints("0:178, -1:178, -1:180, 0:-179, 1:-179, 1:-180"))
+	loopD = makeLoop("0:178, -1:178, -1:180, 0:-179, 1:-179, 1:-180")
 
 	//   3------------2
 	//   |            |               ^
@@ -124,11 +124,11 @@ var (
 	// Loop G:  0,6,7,8,9,a,b,c,d,1,2,3
 	// Loop H:  0,6,f,e,9,a,b,c,d,1,2,3
 	// Loop I:  7,6,f,e,9,8
-	loopE = LoopFromPoints(parsePoints("0:30, 0:34, 0:36, 0:39, 0:41, 0:44, 30:44, 30:30"))
-	loopF = LoopFromPoints(parsePoints("0:30, -30:30, -30:44, 0:44, 0:41, 0:39, 0:36, 0:34"))
-	loopG = LoopFromPoints(parsePoints("0:30, 0:34, 10:34, 10:36, 0:36, 0:39, 10:39, 10:41, 0:41, 0:44, 30:44, 30:30"))
-	loopH = LoopFromPoints(parsePoints("0:30, 0:34, -10:34, -10:36, 0:36, 0:39, 10:39, 10:41, 0:41, 0:44, 30:44, 30:30"))
-	loopI = LoopFromPoints(parsePoints("10:34, 0:34, -10:34, -10:36, 0:36, 10:36"))
+	loopE = makeLoop("0:30, 0:34, 0:36, 0:39, 0:41, 0:44, 30:44, 30:30")
+	loopF = makeLoop("0:30, -30:30, -30:44, 0:44, 0:41, 0:39, 0:36, 0:34")
+	loopG = makeLoop("0:30, 0:34, 10:34, 10:36, 0:36, 0:39, 10:39, 10:41, 0:41, 0:44, 30:44, 30:30")
+	loopH = makeLoop("0:30, 0:34, -10:34, -10:36, 0:36, 0:39, 10:39, 10:41, 0:41, 0:44, 30:44, 30:30")
+	loopI = makeLoop("10:34, 0:34, -10:34, -10:36, 0:36, 10:36")
 
 	// The set of all test loops.
 	allLoops = []*Loop{
@@ -254,7 +254,7 @@ func TestLoopBasic(t *testing.T) {
 }
 
 func TestLoopHoleAndSign(t *testing.T) {
-	l := LoopFromPoints(parsePoints("0:-180, 0:-90, 0:0, 0:90"))
+	l := makeLoop("0:-180, 0:-90, 0:0, 0:90")
 
 	if l.IsHole() {
 		t.Errorf("loop with default depth should not be a hole")
@@ -1818,7 +1818,7 @@ func BenchmarkLoopContainsPoint(b *testing.B) {
 }
 
 func checkLoopDistance(t *testing.T, loop *Loop, point, boundary Point) {
-	maxError := s1.Angle(1e-15)
+	maxError := s1.Angle(epsilon)
 
 	if boundary == (Point{}) {
 		boundary = point
@@ -1865,7 +1865,7 @@ func TestLoopDistance(t *testing.T) {
 	// latitude are curved on the sphere, it is not straightforward to project
 	// points onto any edge except along the equator. (The equator is the only
 	// line of latitude that is also a geodesic.)
-	square := LoopFromPoints(parsePoints("-1:-1, -1:1, 1:1, 1:-1"))
+	square := makeLoop("-1:-1, -1:1, 1:1, 1:-1")
 	if !square.IsNormalized() {
 		t.Errorf("expected square to be normalized")
 	}
@@ -1908,8 +1908,8 @@ func TestLoopDistance(t *testing.T) {
 }
 
 func checkLoopNear(t *testing.T, aString, bString string, maxError s1.Angle, expected bool) {
-	a := LoopFromPoints(parsePoints(aString))
-	b := LoopFromPoints(parsePoints(bString))
+	a := makeLoop(aString)
+	b := makeLoop(bString)
 
 	if near := a.boundaryNear(b, maxError); near != expected {
 		t.Errorf("expected boundary to be %v, got %v", expected, near)

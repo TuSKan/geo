@@ -629,14 +629,14 @@ func TestPolylineUninterpolate(t *testing.T) {
 }
 
 func checkPolylineNearlyCovers(t *testing.T, aString, bString string, maxErrorFloat float64, wantBCoversA, wantACoversB bool) {
-	a := Polyline(parsePoints(aString))
-	b := Polyline(parsePoints(bString))
+	a := makePolyline(aString)
+	b := makePolyline(bString)
 	maxError := s1.Angle(maxErrorFloat) * s1.Degree
 
-	if b.NearlyCoversPolyline(a, maxError) != wantBCoversA {
+	if b.NearlyCoversPolyline(*a, maxError) != wantBCoversA {
 		t.Errorf("expected B nearly covers A to be %v", wantBCoversA)
 	}
-	if a.NearlyCoversPolyline(b, maxError) != wantACoversB {
+	if a.NearlyCoversPolyline(*b, maxError) != wantACoversB {
 		t.Errorf("expected A nearly covers B to be %v", wantACoversB)
 	}
 }
@@ -723,7 +723,7 @@ func TestEmptyPolylines(t *testing.T) {
 }
 
 func TestPolylineEncodeDecode(t *testing.T) {
-	polyline := Polyline(parsePoints("0:0, 0:10, 10:20, 20:30"))
+	polyline := makePolyline("0:0, 0:10, 10:20, 20:30")
 
 	var buf bytes.Buffer
 	if err := polyline.Encode(&buf); err != nil {
@@ -735,13 +735,13 @@ func TestPolylineEncodeDecode(t *testing.T) {
 		t.Error(err)
 	}
 
-	if !decodedPolyline.approxEqual(&polyline, 0) {
+	if !decodedPolyline.approxEqual(polyline, 0) {
 		t.Errorf("expected decoded polyline to be approximately equal to the polyline")
 	}
 }
 
 func TestPolylineEncodeDecodeCompressed(t *testing.T) {
-	polyline := Polyline(parsePoints("0:0, 0:10, 10:20, 20:30"))
+	polyline := makePolyline("0:0, 0:10, 10:20, 20:30")
 
 	var compactBuf bytes.Buffer
 	if err := polyline.EncodeMostCompact(&compactBuf); err != nil {
@@ -761,7 +761,7 @@ func TestPolylineEncodeDecodeCompressed(t *testing.T) {
 		t.Error(err)
 	}
 
-	if !decodedPolyline.approxEqual(&polyline, s1.E7) {
+	if !decodedPolyline.approxEqual(polyline, s1.E7) {
 		t.Errorf("expected decoded polyline to be approximately equal to the polyline")
 	}
 }
