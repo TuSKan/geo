@@ -94,7 +94,7 @@ const (
 
 var (
 	// Some standard polygons to use in the tests.
-	emptyPolygon = &Polygon{}
+	emptyPolygon = EmptyPolygon()
 	fullPolygon  = FullPolygon()
 
 	near0Polygon     = makePolygon(nearLoop0, true)
@@ -520,7 +520,6 @@ func testPolygonOneCoveringPair(t *testing.T, a, b *Polygon) {
 		t.Errorf("%v.Contains(%v) = %v, want %v", a, b, got, want)
 	}
 	// TODO(roberts): Add the remaining checks related to construction via union
-
 }
 
 // Given polygons A and B such that both A and its complement intersect both B
@@ -1124,13 +1123,176 @@ func TestPolygonInvert(t *testing.T) {
 	}
 }
 
+func TestOriginNearPole(t *testing.T) {
+	if lat := LatLngFromPoint(OriginPoint()).Lat.Degrees(); lat <= 80 {
+		t.Errorf("expected origin latitude to be greater than or equal to 80, got %v", lat)
+	}
+}
+
+// Verifies that Polygon does not destroy or replace pointers to Loop, so
+// caller can rely on using raw pointers.
+func TestPolygonLoopPointers(t *testing.T) {
+	loops := []*Loop{
+		makeLoop("4:4, 4:6, 6:6, 6:4"),
+		makeLoop("3:3, 3:7, 7:7, 7:3"),
+		makeLoop("2:2, 2:8, 8:8, 8:2"),
+		makeLoop("1:1, 1:9, 9:9, 9:1"),
+		makeLoop("10:10, 15:15, 20:10"),
+		makeLoop("-1:-1, -9:-1, -9:-9, -1:-9"),
+		makeLoop("-5:-5, -6:-5, -6:-6, -5:-6"),
+	}
+
+	pointers := make(map[*Loop]struct{})
+	for _, loop := range loops {
+		pointers[loop] = struct{}{}
+	}
+	polygon := PolygonFromLoops(loops)
+
+	if len(pointers) != polygon.NumLoops() {
+		t.Errorf("expected number of loops to be equal")
+	}
+
+	for _, loop := range polygon.loops {
+		if _, ok := pointers[loop]; !ok {
+			t.Errorf("expected loop to be equal")
+		}
+	}
+}
+
+func TestPolygonProject(t *testing.T) {
+	polygon := makePolygon(nearLoop0+nearLoop2, false)
+
+	point := parsePoint("1.1:0")
+	projected := polygon.Project(point)
+	if !pointsApproxEqual(point, projected, epsilon) {
+		t.Errorf("expected points to be approximately equal")
+	}
+
+	point = parsePoint("5.1:-2")
+	projected = polygon.Project(point)
+	if !pointsApproxEqual(parsePoint("5:-2"), projected, epsilon) {
+		t.Errorf("expected points to be approximately equal")
+	}
+
+	point = parsePoint("-0.49:-0.49")
+	projected = polygon.Project(point)
+	if !pointsApproxEqual(parsePoint("-0.5:-0.5"), projected, 1e-6) {
+		t.Errorf("expected points to be approximately equal")
+	}
+
+	point = parsePoint("0:-3")
+	projected = polygon.Project(point)
+	if !pointsApproxEqual(parsePoint("0:-2"), projected, epsilon) {
+		t.Errorf("expected points to be approximately equal")
+	}
+}
+
+func checkPolygonDistance(t *testing.T, polygon *Polygon, point, boundary Point) {
+	maxError := s1.Angle(epsilon)
+
+	if boundary == (Point{}) {
+		boundary = point
+	}
+
+	if distance := boundary.Distance(polygon.ProjectToBoundary(point)); distance > maxError {
+		t.Errorf("distance = %v , want < %v", distance, maxError)
+	}
+
+	if polygon.IsEmpty() || polygon.IsFull() {
+		if distance := polygon.DistanceToBoundary(point); distance != s1.InfAngle() {
+			t.Errorf("distance = %v, want %v", distance, s1.InfAngle())
+		}
+	} else {
+		if !float64Near(point.Distance(boundary).Degrees(), polygon.DistanceToBoundary(point).Degrees(), maxError.Degrees()) {
+			t.Errorf("distance and distance to boundary not close enough, got %f, want %f",
+				point.Distance(boundary).Degrees(), polygon.DistanceToBoundary(point).Degrees())
+		}
+	}
+
+	if polygon.ContainsPoint(point) {
+		if distance := polygon.DistanceToPoint(point); distance != 0 {
+			t.Errorf("distance to point = %f, want 0", distance)
+		}
+		if point != polygon.Project(point) {
+			t.Errorf("expected point to be equal to it's projection")
+		}
+	} else {
+		if polygon.DistanceToBoundary(point) != polygon.DistanceToPoint(point) {
+			t.Errorf("distance to boundary and distance to point not close enough, got %f, want %f",
+				polygon.DistanceToBoundary(point).Degrees(), polygon.DistanceToPoint(point).Degrees())
+		}
+		if polygon.ProjectToBoundary(point) != polygon.Project(point) {
+			t.Errorf("expected projection to boundary to be equal to polygon projection")
+		}
+	}
+}
+
+func TestPolygonDistance(t *testing.T) {
+	checkPolygonDistance(t, EmptyPolygon(), PointFromCoords(0, 1, 0), Point{})
+	checkPolygonDistance(t, FullPolygon(), PointFromCoords(0, 1, 0), Point{})
+
+	// A polygon consisting of two nested rectangles centered around
+	// LatLng(0,0). Note that because lines of latitude are curved on the
+	// sphere, it is not straightforward to project points onto any edge except
+	// along the equator. (The equator is the only line of latitude that is
+	// also a geodesic.)
+	nested := makePolygon("3:1, 3:-1, -3:-1, -3:1; 4:2, 4:-2, -4:-2, -4:2;", false)
+	for _, loop := range nested.loops {
+		for j := range loop.vertices {
+			checkPolygonDistance(t, nested, loop.Vertex(j), Point{})
+			checkPolygonDistance(t, nested, Interpolate(randomFloat64(), loop.Vertex(j), loop.Vertex(j+1)), Point{})
+		}
+	}
+
+	tests := []struct {
+		desc            string
+		point, boundary Point
+	}{
+		// A point outside the outer shell that projects to an edge.
+		{
+			desc:     "Point outside outer shell that projects to edge",
+			point:    PointFromLatLng(LatLngFromDegrees(0, -4.7)),
+			boundary: PointFromLatLng(LatLngFromDegrees(0, -2)),
+		},
+		// A point outside the outer shell that projects to a vertex.
+		{
+			desc:     "Point outside outer shell that projects to vertex",
+			point:    PointFromLatLng(LatLngFromDegrees(6, -3)),
+			boundary: PointFromLatLng(LatLngFromDegrees(4, -2)),
+		},
+		// A point inside the polygon that projects to an outer edge.
+		{
+			desc:     "Point inside polygon that projects to outer edge",
+			point:    PointFromLatLng(LatLngFromDegrees(0, 1.7)),
+			boundary: PointFromLatLng(LatLngFromDegrees(0, 2)),
+		},
+		// A point inside the polygon that projects to an inner vertex.
+		{
+			desc:     "Point inside polygon that projects to inner edge",
+			point:    PointFromLatLng(LatLngFromDegrees(-3.3, -1.3)),
+			boundary: PointFromLatLng(LatLngFromDegrees(-3, -1)),
+		},
+		// A point inside the inner hole.
+		{
+			desc:     "Point inside inner hole",
+			point:    PointFromLatLng(LatLngFromDegrees(0, 0.1)),
+			boundary: PointFromLatLng(LatLngFromDegrees(0, 1)),
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
+			checkPolygonDistance(t, nested, test.point, test.boundary)
+		})
+	}
+}
+
 // TODO(roberts): Remaining Tests
 // TestInit
 // TestMultipleInit
 // TestInitSingleLoop
 // TestCellConstructorAndContains
 // TestOverlapFractions
-// TestOriginNearPole
+//// TestOriginNearPole
 // TestTestApproxContainsAndDisjoint
 // TestOneLoopPolygonShape
 // TestSeveralLoopPolygonShape
@@ -1139,7 +1301,7 @@ func TestPolygonInvert(t *testing.T) {
 // TestOperations
 // TestIntersectionSnapFunction
 // TestIntersectionPreservesLoopOrder
-// TestLoopPointers
+//// TestLoopPointers
 // TestBug1 - Bug14
 // TestPolylineIntersection
 // TestSplitting
@@ -1152,8 +1314,8 @@ func TestPolygonInvert(t *testing.T) {
 // TestInitToSnappedIsValid_B
 // TestInitToSnappedIsValid_C
 // TestInitToSnappedIsValid_D
-// TestProject
-// TestDistance
+//// TestProject
+//// TestDistance
 //
 // PolygonSimplifier
 //   TestNoSimplification

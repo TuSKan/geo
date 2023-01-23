@@ -18,6 +18,8 @@ import (
 	"fmt"
 	"io"
 	"math"
+
+	"github.com/golang/geo/s1"
 )
 
 // Polygon represents a sequence of zero or more loops; recall that the
@@ -38,16 +40,16 @@ import (
 //
 // Polygons have the following restrictions:
 //
-//  - Loops may not cross, i.e. the boundary of a loop may not intersect
-//    both the interior and exterior of any other loop.
+//   - Loops may not cross, i.e. the boundary of a loop may not intersect
+//     both the interior and exterior of any other loop.
 //
-//  - Loops may not share edges, i.e. if a loop contains an edge AB, then
-//    no other loop may contain AB or BA.
+//   - Loops may not share edges, i.e. if a loop contains an edge AB, then
+//     no other loop may contain AB or BA.
 //
-//  - Loops may share vertices, however no vertex may appear twice in a
-//    single loop (see Loop).
+//   - Loops may share vertices, however no vertex may appear twice in a
+//     single loop (see Loop).
 //
-//  - No loop may be empty. The full loop may appear only in the full polygon.
+//   - No loop may be empty. The full loop may appear only in the full polygon.
 type Polygon struct {
 	loops []*Loop
 
@@ -342,6 +344,7 @@ type loopStack []*Loop
 func (s *loopStack) push(v *Loop) {
 	*s = append(*s, v)
 }
+
 func (s *loopStack) pop() *Loop {
 	l := len(*s)
 	r := (*s)[l-1]
@@ -408,6 +411,7 @@ func (p *Polygon) initLoopProperties() {
 func (p *Polygon) initEdgesAndIndex() {
 	p.numEdges = 0
 	p.cumulativeEdges = nil
+	p.index = NewShapeIndex()
 	if p.IsFull() {
 		return
 	}
@@ -423,8 +427,19 @@ func (p *Polygon) initEdgesAndIndex() {
 		p.numEdges += len(l.vertices)
 	}
 
-	p.index = NewShapeIndex()
 	p.index.Add(p)
+}
+
+// EmptyPolygon returns a special "empty" polygon.
+func EmptyPolygon() *Polygon {
+	empty := &Polygon{
+		loops:          []*Loop{},
+		bound:          EmptyRect(),
+		subregionBound: EmptyRect(),
+	}
+
+	empty.initEdgesAndIndex()
+	return empty
 }
 
 // FullPolygon returns a special "full" polygon.
@@ -1184,13 +1199,205 @@ func (p *Polygon) decodeCompressed(d *decoder) {
 	p.initLoopProperties()
 }
 
+func (p *Polygon) Centroid() Point {
+	var centroid Point
+	for i := 0; i < p.NumLoops(); i++ {
+		centroid = Point{centroid.Add(p.Loop(i).Centroid().Mul(float64(p.Loop(i).Sign())))}
+	}
+	return centroid
+}
+
+func (p *Polygon) SnapLevel() int {
+	snapLevel := -1
+	for _, loop := range p.loops {
+		for i := 0; i < len(loop.vertices); i++ {
+			_, _, _, level := xyzToFaceSiTi(loop.Vertex(i))
+			if level < 0 {
+				return level
+			}
+			if level != snapLevel {
+				if snapLevel < 0 {
+					snapLevel = level
+				} else {
+					return -1
+				}
+			}
+		}
+	}
+
+	return snapLevel
+}
+
+func (p *Polygon) DistanceToPoint(point Point) s1.Angle {
+	if p.ContainsPoint(point) {
+		return 0
+	}
+	return p.DistanceToBoundary(point)
+}
+
+func (p *Polygon) DistanceToBoundary(point Point) s1.Angle {
+	options := NewClosestEdgeQueryOptions()
+	options.IncludeInteriors(false)
+
+	q := NewClosestEdgeQuery(p.index, options)
+	return q.Distance(NewMinDistanceToPointTarget(point)).Angle()
+}
+
+func (p *Polygon) Project(point Point) Point {
+	if p.ContainsPoint(point) {
+		return point
+	}
+
+	return p.ProjectToBoundary(point)
+}
+
+func (p *Polygon) ProjectToBoundary(boundary Point) Point {
+	options := NewClosestEdgeQueryOptions()
+	options.IncludeInteriors(false)
+
+	q := NewClosestEdgeQuery(p.index, options)
+	edge := q.FindEdge(NewMinDistanceToPointTarget(boundary))
+
+	return q.Project(boundary, edge)
+}
+
+// TODO: The condition tested here is insufficient. The correct
+// condition is that each *connected component* of child loops can share at
+// most one vertex with their parent loop. Example: suppose loop A has
+// children B, C, D, and the following pairs are connected: AB, BC, CD, DA.
+// Then the polygon is not normalized.
+func (p *Polygon) IsNormalized() bool {
+	vertices := make(map[Point]struct{})
+	var lastParent int
+	for i, loop := range p.loops {
+		if loop.depth == 0 {
+			continue
+		}
+
+		if parent, ok := p.Parent(i); ok && parent != lastParent {
+			vertices = make(map[Point]struct{})
+			for _, vertex := range p.Loop(parent).vertices {
+				vertices[vertex] = struct{}{}
+			}
+			lastParent = parent
+		}
+
+		var count int
+		for _, vertex := range loop.vertices {
+			if _, ok := vertices[vertex]; ok {
+				count++
+			}
+		}
+		if count > 1 {
+			return false
+		}
+	}
+
+	return true
+}
+
+func (p *Polygon) Equal(b *Polygon) bool {
+	if p.NumLoops() != b.NumLoops() {
+		return false
+	}
+
+	for i, loop := range p.loops {
+		bLoop := b.Loop(i)
+		if bLoop.depth != loop.depth || !bLoop.Equal(loop) {
+			return false
+		}
+	}
+
+	return true
+}
+
+func (p *Polygon) BoundaryEqual(b *Polygon) bool {
+	if p.NumLoops() != b.NumLoops() {
+		return false
+	}
+
+	success := false
+	for _, loop := range p.loops {
+		for i := range p.loops {
+			bLoop := b.Loop(i)
+
+			if bLoop.depth == loop.depth && bLoop.BoundaryEqual(loop) {
+				success = true
+				break
+			}
+		}
+
+		if !success {
+			return false
+		}
+	}
+
+	return true
+}
+
+func (p *Polygon) BoundaryApproxEqual(b *Polygon) bool {
+	return p.boundaryApproxEqual(b, s1.Angle(epsilon))
+}
+
+func (p *Polygon) boundaryApproxEqual(b *Polygon, maxError s1.Angle) bool {
+	if p.NumLoops() != b.NumLoops() {
+		return false
+	}
+
+	success := false
+	for _, loop := range p.loops {
+		for i := range p.loops {
+			bLoop := b.Loop(i)
+
+			if bLoop.depth == loop.depth && bLoop.boundaryApproxEqual(loop, maxError) {
+				success = true
+				break
+			}
+		}
+
+		if !success {
+			return false
+		}
+	}
+
+	return true
+}
+
+func (p *Polygon) BoundaryNear(b *Polygon) bool {
+	return p.boundaryNear(b, s1.Angle(epsilon))
+}
+
+func (p *Polygon) boundaryNear(b *Polygon, maxError s1.Angle) bool {
+	if p.NumLoops() != b.NumLoops() {
+		return false
+	}
+
+	success := false
+	for _, loop := range p.loops {
+		for i := range p.loops {
+			bLoop := b.Loop(i)
+
+			if bLoop.depth == loop.depth && bLoop.boundaryNear(loop, maxError) {
+				success = true
+				break
+			}
+		}
+
+		if !success {
+			return false
+		}
+	}
+
+	return true
+}
+
 // TODO(roberts): Differences from C++
-// Centroid
-// SnapLevel
-// DistanceToPoint
-// DistanceToBoundary
-// Project
-// ProjectToBoundary
+//// Centroid
+//// SnapLevel
+//// DistanceToPoint
+//// DistanceToBoundary
+//// Project
+//// ProjectToBoundary
 // ApproxContains/ApproxDisjoint for Polygons
 // InitTo{Intersection/ApproxIntersection/Union/ApproxUnion/Diff/ApproxDiff}
 // InitToSimplified
@@ -1202,12 +1409,11 @@ func (p *Polygon) decodeCompressed(d *decoder) {
 // DestructiveUnion
 // DestructiveApproxUnion
 // InitToCellUnionBorder
-// IsNormalized
-// Equal/BoundaryEqual/BoundaryApproxEqual/BoundaryNear Polygons
+//// IsNormalized
+//// Equal/BoundaryEqual/BoundaryApproxEqual/BoundaryNear Polygons
 // BreakEdgesAndAddToBuilder
 //
-// clearLoops
-// findLoopNestingError
+// clearLoops (implement in ShapeIndex)
 // initToSimplifiedInternal
 // internalClipPolyline
 // clipBoundary

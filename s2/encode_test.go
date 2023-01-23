@@ -168,12 +168,6 @@ func TestEncodeDecode(t *testing.T) {
 	const cross1 = "-2:1, -1:1, 1:1, 2:1, 2:-1, 1:-1, -1:-1, -2:-1"
 	const crossCenterHole = "-0.5:0.5, 0.5:0.5, 0.5:-0.5, -0.5:-0.5;"
 
-	emptyPolygon := func() *Polygon {
-		p := &Polygon{loops: []*Loop{}, bound: EmptyRect(), subregionBound: EmptyRect()}
-		p.initEdgesAndIndex()
-		return p
-	}
-
 	tests := []struct {
 		golden string
 		reg    encodableRegion
@@ -215,7 +209,7 @@ func TestEncodeDecode(t *testing.T) {
 		{encodedPointTesting, ptPtr(PointFromCoords(12.34, 56.78, 9.1011))},
 
 		// Polygons.
-		{encodedPolygonEmpty, emptyPolygon()},
+		{encodedPolygonEmpty, EmptyPolygon()},
 		{encodedPolygonFull, FullPolygon()},
 		{encodedPolygon1Loops, makePolygon(cross1, false)},
 		{encodedPolygon2Loops, makePolygon(cross1+";"+crossCenterHole, false)},
