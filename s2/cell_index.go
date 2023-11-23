@@ -574,7 +574,3 @@ func (c *CellIndex) VisitIntersectingCells(target CellUnion, visitor cellVisitor
 
 	return true
 }
-
-// TODO(roberts): Differences from C++
-// IntersectingLabels
-// VisitIntersectingCells

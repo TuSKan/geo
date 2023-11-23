@@ -39,6 +39,8 @@ const (
 	VertexModelClosed
 )
 
+type edgeVisitor func(shape ShapeEdge) bool
+
 // ContainsPointQuery determines whether one or more shapes in a ShapeIndex
 // contain a given Point. The ShapeIndex may contain any number of points,
 // polylines, and/or polygons (possibly overlapping). Shape boundaries may be
@@ -185,6 +187,28 @@ func (q *ContainsPointQuery) ContainingShapes(p Point) []Shape {
 	return shapes
 }
 
-// TODO(roberts): Remaining methods from C++
-// type edgeVisitorFunc func(shape ShapeEdge) bool
-// func (q *ContainsPointQuery) visitIncidentEdges(p Point, v edgeVisitorFunc) bool
+func (q *ContainsPointQuery) visitIncidentEdges(point Point, visitor edgeVisitor) bool {
+	if !q.iter.LocatePoint(point) {
+		return true
+	}
+
+	cell := q.iter.cell
+	for i := 0; i < len(cell.shapes); i++ {
+		clipped := cell.shapes[i]
+		if len(clipped.edges) == 0 {
+			continue
+		}
+
+		shapeID := clipped.shapeID
+		shape := q.index.Shape(shapeID)
+		for j := 0; j < len(clipped.edges); j++ {
+			edgeID := clipped.edges[j]
+			edge := shape.Edge(edgeID)
+			if (edge.V0 == point || edge.V1 == point) && !visitor(ShapeEdge{ShapeEdgeID{shapeID, int32(edgeID)}, edge}) {
+				return false
+			}
+		}
+	}
+
+	return true
+}

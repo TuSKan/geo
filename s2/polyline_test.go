@@ -15,6 +15,7 @@
 package s2
 
 import (
+	"bytes"
 	"math"
 	"reflect"
 	"testing"
@@ -627,21 +628,206 @@ func TestPolylineUninterpolate(t *testing.T) {
 	}
 }
 
+func checkPolylineNearlyCovers(t *testing.T, aString, bString string, maxErrorFloat float64, wantBCoversA, wantACoversB bool) {
+	a := makePolyline(aString)
+	b := makePolyline(bString)
+	maxError := s1.Angle(maxErrorFloat) * s1.Degree
+
+	if b.NearlyCoversPolyline(*a, maxError) != wantBCoversA {
+		t.Errorf("expected B nearly covers A to be %v", wantBCoversA)
+	}
+	if a.NearlyCoversPolyline(*b, maxError) != wantACoversB {
+		t.Errorf("expected A nearly covers B to be %v", wantACoversB)
+	}
+}
+
+func TestPolylineOverlapsSelf(t *testing.T) {
+	checkPolylineNearlyCovers(t, "1:1, 2:2, -1:10", "1:1, 2:2, -1:10", 1e-10, true, true)
+}
+
+func TestPolylineDoesNotOverlapReverse(t *testing.T) {
+	checkPolylineNearlyCovers(t, "1:1, 2:2, -1:10", "-1:10, 2:2, 1:1", 1e-10, false, false)
+}
+
+// These two polylines trace the exact same polyline, but the second one uses
+// three points instead of two.
+func TestPolylineOverlapsEquivalent(t *testing.T) {
+	checkPolylineNearlyCovers(t, "1:1, 2:1", "1:1, 1.5:1, 2:1", 1e-10, true, true)
+}
+
+// The second polyline is always within 0.001 degrees of the first polyline,
+// but the first polyline is too long to be covered by the second.
+func TestShortCoveredByLong(t *testing.T) {
+	checkPolylineNearlyCovers(t, "-5:1, 10:1, 10:5, 5:10", "9:1, 9.9995:1, 10.0005:5", 1e-3, false, true)
+}
+
+// These two polylines partially overlap each other, but neither fully
+// overlaps the other.
+func TestPartialOverlapOnly(t *testing.T) {
+	checkPolylineNearlyCovers(t, "-5:1, 10:1", "0:1, 20:1", 1.0, false, false)
+}
+
+// Two lines that backtrack a bit (less than 1.5 degrees) on different edges.
+// A simple greedy matching algorithm would fail on this example.
+func TestShortBacktracking(t *testing.T) {
+	checkPolylineNearlyCovers(t, "0:0, 0:2, 0:1, 0:4, 0:5", "0:0, 0:2, 0:4, 0:3, 0:5", 1.5, true, true)
+	checkPolylineNearlyCovers(t, "0:0, 0:2, 0:1, 0:4, 0:5", "0:0, 0:2, 0:4, 0:3, 0:5", 0.5, false, false)
+}
+
+// Two arcs with opposite direction do not overlap if the shorter arc is
+// longer than maxError, but do if the shorter arc is shorter than maxError.
+func TestLongBacktracking(t *testing.T) {
+	checkPolylineNearlyCovers(t, "5:1, -5:1", "1:1, 3:1", 1.0, false, false)
+	checkPolylineNearlyCovers(t, "5:1, -5:1", "1:1, 3:1", 2.5, false, true)
+}
+
+// S2Polyines are not generally supposed to contain adjacent, identical
+// points, but it happens in practice.
+func TestIsResilientToDuplicatePoints(t *testing.T) {
+	checkPolylineNearlyCovers(t, "0:1, 0:2, 0:2, 0:3", "0:1, 0:1, 0:1, 0:3", 1e-10, true, true)
+}
+
+// Can handle two possible starting points, only one of which leads to finding
+// a correct path. In the first polyline, the edge from 0:1.1 to 0:0 and the
+// edge from 0:0.9 to 0:2 might be lucrative starting states for covering the
+// second polyline, because both edges are with the maxError of 1.5 degrees
+// from 0:10. However, only the latter is actually effective.
+func TestCanChooseBetweenTwoPotentialStartingPoints(t *testing.T) {
+	checkPolylineNearlyCovers(t, "0:11, 0:0, 0:9, 0:20", "0:10, 0:15", 1.5, false, true)
+}
+
+func TestStraightAndWigglyPolylinedCoverEachOther(t *testing.T) {
+	checkPolylineNearlyCovers(
+		t,
+		"40:1, 20:1",
+		"39.9:0.9, 40:1.1, 30:1.15, 29:0.95, 28:1.1, 27:1.15, 26:1.05, 25:0.85, 24:1.1, 23:0.9, 20:0.99",
+		0.2,
+		true,
+		true,
+	)
+}
+
+// The first polyline covers the second, but the matching segment starts at
+// the last vertex of the first polyline.
+func TestMatchStartsAtLastVertex(t *testing.T) {
+	checkPolylineNearlyCovers(t, "0:0, 0:2", "0:2, 0:3", 1.5, false, true)
+}
+
+func TestMatchStartsAtDuplicateLastVertex(t *testing.T) {
+	checkPolylineNearlyCovers(t, "0:0, 0:2, 0:2, 0:2", "0:2, 0:3", 1.5, false, true)
+}
+
+func TestEmptyPolylines(t *testing.T) {
+	checkPolylineNearlyCovers(t, "0:1, 0:2", "", 0.0, false, true)
+	checkPolylineNearlyCovers(t, "", "", 0.0, true, true)
+}
+
+func TestPolylineEncodeDecode(t *testing.T) {
+	polyline := makePolyline("0:0, 0:10, 10:20, 20:30")
+
+	var buf bytes.Buffer
+	if err := polyline.Encode(&buf); err != nil {
+		t.Error(err)
+	}
+
+	var decodedPolyline Polyline
+	if err := decodedPolyline.Decode(&buf); err != nil {
+		t.Error(err)
+	}
+
+	if !decodedPolyline.approxEqual(polyline, 0) {
+		t.Errorf("expected decoded polyline to be approximately equal to the polyline")
+	}
+}
+
+func TestPolylineEncodeDecodeCompressed(t *testing.T) {
+	polyline := makePolyline("0:0, 0:10, 10:20, 20:30")
+
+	var compactBuf bytes.Buffer
+	if err := polyline.EncodeMostCompact(&compactBuf); err != nil {
+		t.Error(err)
+	}
+	var uncompressedBuf bytes.Buffer
+	if err := polyline.Encode(&uncompressedBuf); err != nil {
+		t.Error(err)
+	}
+
+	if compactBuf.Len() > uncompressedBuf.Len() {
+		t.Errorf("expected compressed encoder size to be smaller than lossless encoder")
+	}
+
+	var decodedPolyline Polyline
+	if err := decodedPolyline.Decode(&compactBuf); err != nil {
+		t.Error(err)
+	}
+
+	if !decodedPolyline.approxEqual(polyline, s1.E7) {
+		t.Errorf("expected decoded polyline to be approximately equal to the polyline")
+	}
+}
+
+func TestPolylineEncodeMostCompactEmpty(t *testing.T) {
+	var polyline, decodedPolyline Polyline
+	var buf bytes.Buffer
+
+	if err := polyline.EncodeMostCompact(&buf); err != nil {
+		t.Error(err)
+	}
+
+	if err := decodedPolyline.Decode(&buf); err != nil {
+		t.Error(err)
+	}
+
+	if len(polyline) != len(decodedPolyline) {
+		t.Errorf("expected decoded polyline to have the same amount of points as the polyline")
+	}
+}
+
+func TestPolylineEncodeCompressedEmpty(t *testing.T) {
+	var polyline, decodedPolyline Polyline
+	var buf bytes.Buffer
+
+	if err := polyline.Encode(&buf); err != nil {
+		t.Error(err)
+	}
+
+	if err := decodedPolyline.Decode(&buf); err != nil {
+		t.Error(err)
+	}
+
+	if len(polyline) != len(decodedPolyline) {
+		t.Errorf("expected decoded polyline to have the same amount of points as the polyline")
+	}
+}
+
+func TestPolylineDecodeCompressedMaxCellLevel(t *testing.T) {
+	var buf bytes.Buffer
+
+	e := &encoder{w: &buf}
+	e.writeInt8(encodingCompressedVersion)
+	e.writeInt8(maxLevel)
+	e.writeInt32(0)
+
+	var decodedPolyline Polyline
+	if err := decodedPolyline.Decode(&buf); err != nil {
+		t.Error(err)
+	}
+}
+
+func TestPolylineDecodeCompressedCellLevelTooHigh(t *testing.T) {
+	var buf bytes.Buffer
+
+	e := &encoder{w: &buf}
+	e.writeInt8(encodingCompressedVersion)
+	e.writeInt8(maxLevel + 1)
+	e.writeInt32(0)
+
+	var decodedPolyline Polyline
+	if err := decodedPolyline.Decode(&buf); err == nil {
+		t.Errorf("expected to fail decoding")
+	}
+}
+
 // TODO(roberts): Test differences from C++:
 // InitToSnapped
 // InitToSimplified
-//
-// PolylineCoveringTest
-//    PolylineOverlapsSelf
-//    PolylineDoesNotOverlapReverse
-//    PolylineOverlapsEquivalent
-//    ShortCoveredByLong
-//    PartialOverlapOnly
-//    ShortBacktracking
-//    LongBacktracking
-//    IsResilientToDuplicatePoints
-//    CanChooseBetweenTwoPotentialStartingPoints
-//    StraightAndWigglyPolylinesCoverEachOther
-//    MatchStartsAtLastVertex
-//    MatchStartsAtDuplicatedLastVertex
-//    EmptyPolylines

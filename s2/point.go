@@ -243,7 +243,7 @@ func (p *Point) decode(d *decoder) {
 // Rotate the given point about the given axis by the given angle. p and
 // axis must be unit length; angle has no restrictions (e.g., it can be
 // positive, negative, greater than 360 degrees, etc).
-func Rotate(p, axis Point, angle s1.Angle) Point {
+func (p *Point) Rotate(axis Point, angle s1.Angle) Point {
 	// Let M be the plane through P that is perpendicular to axis, and let
 	// center be the point where M intersects axis. We construct a
 	// right-handed orthogonal frame (dx, dy, center) such that dx is the

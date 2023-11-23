@@ -68,6 +68,15 @@ type Loop struct {
 	index *ShapeIndex
 }
 
+func NewLoop() *Loop {
+	l := &Loop{
+		index: NewShapeIndex(),
+	}
+
+	l.initOriginAndBound()
+	return l
+}
+
 // LoopFromPoints constructs a loop from the given points.
 func LoopFromPoints(pts []Point) *Loop {
 	l := &Loop{
@@ -1827,10 +1836,136 @@ func (l *Loop) containsNonCrossingBoundary(other *Loop, reverseOther bool) bool 
 		other.Vertex(1), reverseOther)
 }
 
-// TODO(roberts): Differences from the C++ version:
-// DistanceToPoint
-// DistanceToBoundary
-// Project
-// ProjectToBoundary
-// BoundaryApproxEqual
-// BoundaryNear
+func (l *Loop) DistanceToPoint(point Point) s1.Angle {
+	if l.ContainsPoint(point) {
+		return 0
+	}
+
+	return l.DistanceToBoundary(point)
+}
+
+func (l *Loop) DistanceToBoundary(point Point) s1.Angle {
+	options := NewClosestEdgeQueryOptions()
+	options.IncludeInteriors(false)
+
+	q := NewClosestEdgeQuery(l.index, options)
+
+	return q.Distance(NewMinDistanceToPointTarget(point)).Angle()
+}
+
+func (l *Loop) Project(point Point) Point {
+	if l.ContainsPoint(point) {
+		return point
+	}
+
+	return l.ProjectToBoundary(point)
+}
+
+func (l *Loop) ProjectToBoundary(boundary Point) Point {
+	options := NewClosestEdgeQueryOptions()
+	options.IncludeInteriors(false)
+
+	q := NewClosestEdgeQuery(l.index, options)
+	edge := q.FindEdge(NewMinDistanceToPointTarget(boundary))
+
+	return q.Project(boundary, edge)
+}
+
+func (l *Loop) BoundaryApproxEqual(b *Loop) bool {
+	return l.boundaryApproxEqual(b, s1.Angle(epsilon))
+}
+
+func (l *Loop) boundaryApproxEqual(b *Loop, maxError s1.Angle) bool {
+	if len(l.vertices) != len(b.vertices) {
+		return false
+	}
+
+	// Special case to handle empty or full loops. Since they have the same
+	// number of vertices, if one loop is empty/full then so is the other.
+	if l.isEmptyOrFull() {
+		return l.IsEmpty() == b.IsEmpty()
+	}
+
+	for offset := 0; offset < len(l.vertices); offset++ {
+		if l.Vertex(offset).approxEqual(b.vertices[0], maxError) {
+			success := true
+			for i := 0; i < len(l.vertices); i++ {
+				if !l.Vertex(i+offset).approxEqual(b.vertices[i], maxError) {
+					success = false
+					break
+				}
+			}
+
+			if success {
+				return true
+			}
+			// Otherwise continue looping. There may be more than one candidate
+			// starting offset since vertices are only matched approximately.
+		}
+	}
+
+	return false
+}
+
+func (l *Loop) BoundaryNear(b *Loop) bool {
+	return l.boundaryNear(b, s1.Angle(epsilon))
+}
+
+func (l *Loop) boundaryNear(b *Loop, maxError s1.Angle) bool {
+	if l.isEmptyOrFull() || b.isEmptyOrFull() {
+		return (l.IsEmpty() && b.IsEmpty()) || (l.IsFull() && b.IsFull())
+	}
+
+	for offset := 0; offset < len(l.vertices); offset++ {
+		if l.MatchBoundaries(b, offset, maxError) {
+			return true
+		}
+	}
+
+	return false
+}
+
+// The state consists of a pair (i,j). A state transition consists of
+// incrementing either "i" or "j". "i" can be incremented only if
+// l.vertices[i+1+offset] is near the edge from b.vertices[j] to b.vertices[j]1),
+// and a similar rule applies to "j". The function returns true if we can proceed
+// all the way around both loops in this way.
+//
+// Note that when "i" and "j" can both be incremented, sometimes only one
+// choice leads to a solution. We handle this using a stack and
+// backtracking. We also keep track of which states have already been
+// explored to avoid duplicating work.
+func (l *Loop) MatchBoundaries(b *Loop, offset int, maxError s1.Angle) bool {
+	pending := [][2]int{{0, 0}}
+	done := make(map[[2]int]struct{})
+	for len(pending) > 0 {
+		ij := pending[len(pending)-1]
+		i := ij[0]
+		j := ij[1]
+		pending = pending[:len(pending)-1]
+
+		if i == len(l.vertices) && j == len(b.vertices) {
+			return true
+		}
+		done[ij] = struct{}{}
+
+		// If (i == na && offset == na-1) where na == len(l.vertices),
+		// then (i+1+offset) overflows the [0, 2*na-1] range from l.Vertex().
+		// So we reduce the range if necessary.
+		io := i + offset
+		if io >= len(l.vertices) {
+			io -= len(l.vertices)
+		}
+
+		if _, ok := done[[2]int{i + 1, j}]; i < len(l.vertices) && !ok &&
+			DistanceFromSegment(l.Vertex(io+1), b.Vertex(j), b.Vertex(j+1)) <= maxError {
+			pending = append(pending, [2]int{i + 1, j})
+		}
+		if _, ok := done[[2]int{i, j + 1}]; j < len(b.vertices) && !ok &&
+			DistanceFromSegment(b.Vertex(j+1), l.Vertex(io), l.Vertex(io+1)) <= maxError {
+			pending = append(pending, [2]int{i, j + 1})
+		}
+	}
+
+	return false
+}

@@ -77,8 +77,8 @@ func (m *matrix3x3) det() float64 {
 	//      | a  b  c |
 	//  det | d  e  f | = aei + bfg + cdh - ceg - bdi - afh
 	//      | g  h  i |
-	return m[0][0]*m[1][1]*m[2][2] + m[0][1]*m[1][2]*m[2][0] + m[0][2]*m[1][0]*m[2][1] -
-		m[0][2]*m[1][1]*m[2][0] - m[0][1]*m[1][0]*m[2][2] - m[0][0]*m[1][2]*m[2][1]
+	return float64(m[0][0]*m[1][1]*m[2][2]) + float64(m[0][1]*m[1][2]*m[2][0]) + float64(m[0][2]*m[1][0]*m[2][1]) -
+		float64(m[0][2]*m[1][1]*m[2][0]) - float64(m[0][1]*m[1][0]*m[2][2]) - float64(m[0][0]*m[1][2]*m[2][1])
 }
 
 // transpose reflects the matrix along its diagonal and returns the result.

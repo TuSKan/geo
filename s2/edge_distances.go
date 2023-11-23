@@ -406,3 +406,82 @@ func EdgePairClosestPoints(a0, a1, b0, b1 Point) (Point, Point) {
 		panic("illegal case reached")
 	}
 }
+
+func IsEdgeBNearEdgeA(a0, a1, b0, b1 Point, tolerance s1.Angle) bool {
+	// The point on edge B=b0b1 furthest from edge A=a0a1 is either b0, b1, or
+	// some interior point on B. If it is an interior point on B, then it must be
+	// one of the two points where the great circle containing B (circ(B)) is
+	// furthest from the great circle containing A (circ(A)). At these points,
+	// the distance between circ(B) and circ(A) is the angle between the planes
+	// containing them.
+
+	aOrtho := a0.PointCross(a1).Normalize()
+	aNearestToB0 := Project(b0, a0, a1)
+	aNearestToB1 := Project(b1, a0, a1)
+	// If aNearestToB0 and aNearestToB1 have opposite orientation from a0 and a1,
+	// we invert aOrtho so that it points in the same direction as aNearestToB0 x
+	// aNearestToB1. This helps us handle the case where A and B are oppositely
+	// oriented but otherwise might be near each other. We check orientation and
+	// invert rather than computing aNearestToB0 x aNearestToB1 because those two
+	// points might be equal, and have an unhelpful cross product.
+	if !Sign(Point{aOrtho}, aNearestToB0, aNearestToB1) {
+		aOrtho = aOrtho.Mul(-1)
+	}
+
+	// To check if all points on B are within tolerance of A, we first check to
+	// see if the endpoints of B are near A. If they are not, B is not near A.
+	if b0.Distance(aNearestToB0) > tolerance || b1.Distance(aNearestToB1) > tolerance {
+		return false
+	}
+
+	// If b0 and b1 are both within tolerance of A, we check to see if the angle
+	// between the planes containing B and A is greater than tolerance. If it is
+	// not, no point on B can be further than tolerance from A (recall that we
+	// already know that b0 and b1 are close to A, and S2Edges are all shorter
+	// than 180 degrees). The angle between the planes containing circ(A) and
+	// circ(B) is the angle between their normal vectors.
+	bOrtho := b0.PointCross(b1).Normalize()
+	planarAngle := aOrtho.Angle(bOrtho)
+	if planarAngle <= tolerance {
+		return true
+	}
+
+	// When planarAngle >= Pi/2, there are only two possible scenarios:
+	//
+	//  1.) b0 and b1 are closest to A at distinct endpoints of A, in which case
+	//      the opposite orientation of aOrtho and bOrtho means that A and B are
+	//      in opposite hemispheres and hence not close to each other.
+	//
+	//  2.) b0 and b1 are closest to A at the same endpoint of A, in which case
+	//      the orientation of aOrtho was chosen arbitrarily to be that of a0
+	//      cross a1. B must be shorter than 2*tolerance and all points in B are
+	//      close to one endpoint of A, and hence to A.
+	//
+	// Note that this logic *must* be used when planarAngle >= Pi/2 because the
+	// code beyond does not handle the case where the maximum distance is
+	// attained at the interior point of B that is equidistant from the
+	// endpoints of A. This happens when B intersects the perpendicular
+	// bisector of the endpoints of A in the hemisphere opposite A's midpoint.
+	if planarAngle >= s1.Angle(math.Pi/2) {
+		return (b0.Distance(a0) < b0.Distance(a1)) == (b1.Distance(a0) < b1.Distance(a1))
+	}
+
+	// Otherwise, if either of the two points on circ(B) where circ(B) is
+	// furthest from circ(A) lie on edge B, edge B is not near edge A.
+	//
+	// The normalized projection of aOrtho onto the plane of circ(B) is one of
+	// the two points along circ(B) where it is furthest from circ(A). The other
+	// is -1 times the normalized projection.
+	//
+	// Note that the formula (A - (A.B) * B) loses accuracy when |A.B| ~= 1, so
+	// instead we compute it using two cross products. (The first product does
+	// not need RobustCrossProd since its arguments are perpendicular.)
+	furthest := bOrtho.Cross(Point{aOrtho}.PointCross(Point{bOrtho}).Vector).Normalize()
+	furthestInverse := furthest.Mul(-1)
+
+	// A point p lies on B if you can proceed from bOrtho to b0 to p to b1 and
+	// back to bOrtho without ever turning right. We test this for furthest and
+	// furthestInv, and return true if neither point lies on B.
+	return !((Sign(Point{bOrtho}, b0, Point{furthest}) && Sign(Point{furthest}, b1, Point{bOrtho})) ||
+		(Sign(Point{bOrtho}, b0, Point{furthestInverse}) && Sign(Point{furthestInverse}, b1, Point{bOrtho})))
+}

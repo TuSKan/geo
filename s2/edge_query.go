@@ -395,6 +395,10 @@ func sortAndUniqueResults(results []EdgeQueryResult) []EdgeQueryResult {
 	return results[:j+1]
 }
 
+func (e *EdgeQuery) FindEdge(target distanceTarget) EdgeQueryResult {
+	return e.findEdge(target, e.opts)
+}
+
 // findEdge is a convenience method that returns exactly one edge, and if no
 // edges satisfy the given search criteria, then a default Result is returned.
 //
@@ -796,6 +800,16 @@ func (e *EdgeQuery) processOrEnqueue(id CellID, indexCell *ShapeIndexCell) {
 	})
 }
 
-// TODO(roberts): Remaining pieces
-// GetEdge
-// Project
+func (e *EdgeQuery) Egde(result EdgeQueryResult) Edge {
+	return e.index.Shape(result.shapeID).Edge(int(result.edgeID))
+}
+
+func (e *EdgeQuery) Project(point Point, result EdgeQueryResult) Point {
+	if result.edgeID < 0 {
+		return point
+	}
+
+	edge := e.Egde(result)
+
+	return Project(point, edge.V0, edge.V1)
+}

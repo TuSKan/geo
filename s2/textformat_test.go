@@ -188,7 +188,7 @@ func makePolygon(s string, normalize bool) *Polygon {
 	// Avoid the case where strings.Split on empty string will still return
 	// one empty value, where we want no values.
 	if s == "empty" || s == "" {
-		return PolygonFromLoops(loops)
+		return EmptyPolygon()
 	}
 
 	for _, str := range strings.Split(s, ";") {

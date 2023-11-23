@@ -255,7 +255,7 @@ func TestPointRotate(t *testing.T) {
 			angle = 0
 		}
 
-		got := Rotate(p, axis, angle)
+		got := p.Rotate(axis, angle)
 
 		if !got.IsUnit() {
 			t.Errorf("%v should be unit length", got)

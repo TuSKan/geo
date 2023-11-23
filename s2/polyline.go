@@ -372,29 +372,32 @@ func (p Polyline) encode(e *encoder) {
 
 // Decode decodes the polyline.
 func (p *Polyline) Decode(r io.Reader) error {
-	d := decoder{r: asByteReader(r)}
-	p.decode(d)
+	d := &decoder{r: asByteReader(r)}
+	version := d.readInt8()
+	if d.err != nil {
+		return d.err
+	}
+
+	switch version {
+	case encodingVersion:
+		p.decode(d)
+	case encodingCompressedVersion:
+		p.decodeCompressed(d)
+	}
+
 	return d.err
 }
 
-func (p *Polyline) decode(d decoder) {
-	version := d.readInt8()
+func (p *Polyline) decode(d *decoder) {
+	nVertices := d.readUint32()
 	if d.err != nil {
 		return
 	}
-	if int(version) != int(encodingVersion) {
-		d.err = fmt.Errorf("can't decode version %d; my version: %d", version, encodingVersion)
+	if nVertices > maxEncodedVertices {
+		d.err = fmt.Errorf("too many vertices (%d; max is %d)", nVertices, maxEncodedVertices)
 		return
 	}
-	nvertices := d.readUint32()
-	if d.err != nil {
-		return
-	}
-	if nvertices > maxEncodedVertices {
-		d.err = fmt.Errorf("too many vertices (%d; max is %d)", nvertices, maxEncodedVertices)
-		return
-	}
-	*p = make([]Point, nvertices)
+	*p = make([]Point, nVertices)
 	for i := range *p {
 		(*p)[i].X = d.readFloat64()
 		(*p)[i].Y = d.readFloat64()
@@ -581,9 +584,236 @@ func (p *Polyline) Uninterpolate(point Point, nextVertex int) float64 {
 	return minFloat64(1.0, float64(lengthToPoint/sum))
 }
 
+///// TODO vars
+// NOTE: This algorithm is described assuming that adjacent vertices in a
+// polyline are never at the same point. That is, the ith and i+1th vertices
+// of a polyline are never at the same point in space. The implementation
+// does not make this assumption.
+
+// DEFINITIONS:
+//   - edge "i" of a polyline is the edge from the ith to i+1th vertex.
+//   - covered is a polyline consisting of edges 0 through j of "covered."
+//   - thisI is a polyline consisting of edges 0 through i of this polyline.
+//
+// A search state is represented as an (int, int, bool) tuple, (i, j,
+// inProgress). Using the "drive a car" analogy from the header comment, a
+// search state signifies that you can drive one car along "covered" from its
+// first vertex through a point on its jth edge, and another car along this
+// polyline from some point on or before its ith edge to a to a point on its
+// ith edge, such that no car ever goes backward, and the cars are always
+// within "maxError" of each other. If inProgress is true, it means that
+// you can definitely drive along "covered" through the jth vertex (beginning
+// of the jth edge). Otherwise, you can definitely drive along "covered"
+// through the point on the jth edge of "covered" closest to the ith vertex of
+// this polyline.
+//
+// The algorithm begins by finding all edges of this polyline that are within
+// "maxError" of the first vertex of "covered," and adding search states
+// representing all of these possible starting states to the stack of
+// "pending" states.
+//
+// The algorithm proceeds by popping the next pending state,
+// (i, j, inProgress), off of the stack. First it checks to see if that
+// state represents finding a valid covering of "covered" and returns true if
+// so. Next, if the state represents reaching the end of this polyline
+// without finding a successful covering, the algorithm moves on to the next
+// state in the stack. Otherwise, if state (i+1, j, false) is valid, it is
+// added to the stack of pending states. Same for state (i, j+1, true).
+//
+// We need the stack because when "i" and "j" can both be incremented,
+// sometimes only one choice leads to a solution. We use a map to keep track
+// of visited states to avoid duplicating work. With the map, the worst-case
+// number of states examined is O(n+m) where n = len(p) and m = len(covered).
+// Without it, the amount of work could be as high as O((n*m)^2).
+// Using map, the running time is O((n*m) log (n*m)).
+func (p Polyline) NearlyCoversPolyline(covered Polyline, maxError s1.Angle) bool {
+	if len(covered) == 0 {
+		return true
+	}
+	if len(p) == 0 {
+		return false
+	}
+
+	var pending []searchState
+	done := make(map[searchState]struct{})
+
+	next := p.NextDistinctVertex(0)
+	var nextNext int
+	for i := 0; next < len(p); {
+		nextNext = p.NextDistinctVertex(next)
+		closestPoint := Project(covered[0], (p)[i], (p)[next])
+
+		if (nextNext == len(p) || closestPoint != (p)[next]) && closestPoint.Distance(covered[0]) <= maxError {
+			pending = append(pending, searchState{i, 0, true})
+		}
+
+		i, next = next, nextNext
+	}
+
+	for len(pending) != 0 {
+		state := pending[len(pending)-1]
+		pending = pending[:len(pending)-1]
+		if _, ok := done[state]; ok {
+			continue
+		} else {
+			done[state] = struct{}{}
+		}
+
+		nextI := p.NextDistinctVertex(state.i)
+		nextJ := covered.NextDistinctVertex(state.j)
+		if nextJ == len(covered) {
+			return true
+		} else if nextI == len(p) {
+			continue
+		}
+
+		var iBegin, jBegin Point
+		if state.inProgress {
+			jBegin = covered[state.j]
+			iBegin = Project(jBegin, (p)[state.i], (p)[nextI])
+		} else {
+			iBegin = (p)[state.i]
+			jBegin = Project(iBegin, covered[state.j], covered[nextJ])
+		}
+
+		if IsEdgeBNearEdgeA(jBegin, covered[nextJ], iBegin, (p)[nextI], maxError) {
+			pending = append(pending, searchState{nextI, state.j, false})
+		}
+		if IsEdgeBNearEdgeA(iBegin, (p)[nextI], jBegin, covered[nextJ], maxError) {
+			pending = append(pending, searchState{state.i, nextJ, true})
+		}
+	}
+
+	return false
+}
+
+type searchState struct {
+	i, j       int
+	inProgress bool
+}
+
+// Return the first i > "index" such that the ith vertex of the polyline is not
+// at the same point as the "index"th vertex. Returns the polyline's length if
+// there is no such value of i.
+func (p *Polyline) NextDistinctVertex(index int) int {
+	initial := (*p)[index]
+
+	for ok := true; ok; ok = index < len(*p) && (*p)[index] == initial {
+		index++
+	}
+
+	return index
+}
+
+func (p *Polyline) InitToSnapped(snapLevel int) {
+}
+
+func (p *Polyline) SnapLevel() int {
+	snapLevel := -1
+	for _, point := range *p {
+		_, _, _, level := xyzToFaceSiTi(point)
+		if level < 0 {
+			return level // Vertex is not a cell center.
+		}
+		if level != snapLevel {
+			if snapLevel < 0 {
+				snapLevel = level // First vertex.
+			} else {
+				return -1 // Vertices at more than one cell level.
+			}
+		}
+	}
+
+	return snapLevel
+}
+
+func (p Polyline) EncodeMostCompact(w io.Writer) error {
+	if len(p) == 0 {
+		return p.EncodeCompressed(w, nil, maxLevel)
+	}
+
+	// Convert points to (face, si, ti) representation.
+	vertices := make([]xyzFaceSiTi, len(p))
+
+	// Computes a histogram of the cell levels at which the vertices are snapped.
+	// level is -1 for unsnapped, or 0 through maxLevel if snapped,
+	// so we add one to it to get a non-negative index. (histogram[0] is the
+	// number of unsnapped vertices, histogram[i] the number of vertices
+	// snapped at level i-1).
+	histogram := make([]int, maxLevel+2)
+
+	for i, point := range p {
+		vertices[i].xyz = point
+		vertices[i].face, vertices[i].si, vertices[i].ti, vertices[i].level = xyzToFaceSiTi(point)
+
+		histogram[vertices[i].level+1] += 1
+	}
+
+	// Compute the level at which most of the vertices are snapped.
+	// If multiple levels have the same maximum number of vertices
+	// snapped to it, the first one (lowest level number / largest
+	// area / smallest encoding length) will be chosen, so this
+	// is desired.  Start with histogram[1] since histogram[0] is
+	// the number of unsnapped vertices, which we don't care about.
+	var snapLevel, numSnapped int
+	for level, h := range histogram[1:] {
+		if h > numSnapped {
+			snapLevel, numSnapped = level, h
+		}
+	}
+
+	numUnsnapped := len(p) - numSnapped // Number of vertices that won't be snapped at snapLevel.
+	const pointSize = 3 * 8             // s2.Point is an r3.Vector, which is 3 float64s. That's 3*8 = 24 bytes.
+	compressedSize := 4*len(p) + (pointSize+2)*numUnsnapped
+	losslessSize := pointSize * len(p)
+	if compressedSize < losslessSize {
+		return p.EncodeCompressed(w, vertices, snapLevel)
+	}
+	return p.Encode(w)
+}
+
+func (p Polyline) EncodeCompressed(w io.Writer, vertices []xyzFaceSiTi, snapLevel int) error {
+	e := &encoder{w: w}
+	p.encodeCompressed(e, vertices, snapLevel)
+	return e.err
+}
+
+func (p Polyline) encodeCompressed(e *encoder, vertices []xyzFaceSiTi, snapLevel int) {
+	e.writeInt8(encodingCompressedVersion)
+	e.writeInt8(int8(snapLevel))
+	e.writeUvarint(uint64(len(p)))
+	encodePointsCompressed(e, vertices, snapLevel)
+}
+
+func (p *Polyline) DecodeCompressed(r io.Reader) error {
+	d := &decoder{r: asByteReader(r)}
+	p.decodeCompressed(d)
+	return d.err
+}
+
+func (p *Polyline) decodeCompressed(d *decoder) {
+	snapLevel := d.readInt8()
+	if d.err != nil {
+		return
+	}
+	if snapLevel > maxLevel {
+		d.err = fmt.Errorf("snap level too high (%d; max is %d)", snapLevel, maxLevel)
+		return
+	}
+
+	nVertices := d.readUvarint()
+	if d.err != nil {
+		return
+	}
+	if nVertices > maxEncodedVertices {
+		d.err = fmt.Errorf("too many vertices (%d; max is %d)", nVertices, maxEncodedVertices)
+		return
+	}
+
+	*p = make([]Point, nVertices)
+	decodePointsCompressed(d, int(snapLevel), *p)
+}
+
 // TODO(roberts): Differences from C++.
-// NearlyCoversPolyline
 // InitToSnapped
 // InitToSimplified
-// SnapLevel
-// encode/decode compressed
