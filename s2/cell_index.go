@@ -15,6 +15,8 @@
 package s2
 
 import (
+	"bytes"
+	"fmt"
 	"sort"
 )
 
@@ -40,6 +42,18 @@ func newCellIndexNode() cellIndexNode {
 	}
 }
 
+func (cn cellIndexNode) MarshalBinary() ([]byte, error) {
+	var b bytes.Buffer
+	fmt.Fprintln(&b, cn.cellID, cn.label, cn.parent)
+	return b.Bytes(), nil
+}
+
+func (cn *cellIndexNode) UnmarshalBinary(data []byte) error {
+	b := bytes.NewBuffer(data)
+	_, err := fmt.Fscanln(b, &cn.cellID, &cn.label, &cn.parent)
+	return err
+}
+
 // A rangeNode represents a range of leaf CellIDs. The range starts at
 // startID (a leaf cell) and ends at the startID field of the next
 // rangeNode. contents points to the node of the CellIndex cellTree
@@ -47,6 +61,18 @@ func newCellIndexNode() cellIndexNode {
 type rangeNode struct {
 	startID  CellID // First leaf cell contained by this range.
 	contents int32  // Contents of this node (an index within the cell tree).
+}
+
+func (rn rangeNode) MarshalBinary() ([]byte, error) {
+	var b bytes.Buffer
+	fmt.Fprintln(&b, rn.startID, rn.contents)
+	return b.Bytes(), nil
+}
+
+func (rn *rangeNode) UnmarshalBinary(data []byte) error {
+	b := bytes.NewBuffer(data)
+	_, err := fmt.Fscanln(b, &rn.startID, &rn.contents)
+	return err
 }
 
 type labels []int32
