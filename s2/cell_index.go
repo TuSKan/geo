@@ -15,8 +15,8 @@
 package s2
 
 import (
-	"bytes"
 	"fmt"
+	"io"
 	"sort"
 )
 
@@ -42,16 +42,42 @@ func newCellIndexNode() cellIndexNode {
 	}
 }
 
-func (cn cellIndexNode) MarshalBinary() ([]byte, error) {
-	var b bytes.Buffer
-	fmt.Fprintln(&b, cn.cellID, cn.label, cn.parent)
-	return b.Bytes(), nil
+// Encode encodes the cellIndexNode.
+func (n cellIndexNode) Encode(w io.Writer) error {
+	e := &encoder{w: w}
+	n.encode(e)
+	return e.err
 }
 
-func (cn *cellIndexNode) UnmarshalBinary(data []byte) error {
-	b := bytes.NewBuffer(data)
-	_, err := fmt.Fscanln(b, &cn.cellID, &cn.label, &cn.parent)
-	return err
+func (n cellIndexNode) encode(e *encoder) {
+	e.writeInt8(encodingVersion)
+	n.cellID.Encode(e.w)
+	e.writeInt32(n.label)
+	e.writeInt32(n.parent)
+}
+
+// Decode decodes the cellIndexNode.
+func (n *cellIndexNode) Decode(r io.Reader) error {
+	d := &decoder{r: asByteReader(r)}
+	version := d.readInt8()
+	if d.err != nil {
+		return d.err
+	}
+
+	switch version {
+	case encodingVersion:
+		n.decode(d)
+	case encodingCompressedVersion:
+		return fmt.Errorf("not implemented")
+	}
+
+	return d.err
+}
+
+func (n *cellIndexNode) decode(d *decoder) {
+	(*n).cellID.decode(d)
+	(*n).label = d.readInt32()
+	(*n).parent = d.readInt32()
 }
 
 // A rangeNode represents a range of leaf CellIDs. The range starts at
@@ -63,16 +89,40 @@ type rangeNode struct {
 	contents int32  // Contents of this node (an index within the cell tree).
 }
 
-func (rn rangeNode) MarshalBinary() ([]byte, error) {
-	var b bytes.Buffer
-	fmt.Fprintln(&b, rn.startID, rn.contents)
-	return b.Bytes(), nil
+// Encode encodes the rangeNode.
+func (r rangeNode) Encode(w io.Writer) error {
+	e := &encoder{w: w}
+	r.encode(e)
+	return e.err
 }
 
-func (rn *rangeNode) UnmarshalBinary(data []byte) error {
-	b := bytes.NewBuffer(data)
-	_, err := fmt.Fscanln(b, &rn.startID, &rn.contents)
-	return err
+func (r rangeNode) encode(e *encoder) {
+	e.writeInt8(encodingVersion)
+	r.startID.Encode(e.w)
+	e.writeInt32(r.contents)
+}
+
+// Decode decodes the rangeNode.
+func (n *rangeNode) Decode(r io.Reader) error {
+	d := &decoder{r: asByteReader(r)}
+	version := d.readInt8()
+	if d.err != nil {
+		return d.err
+	}
+
+	switch version {
+	case encodingVersion:
+		n.decode(d)
+	case encodingCompressedVersion:
+		return fmt.Errorf("not implemented")
+	}
+
+	return d.err
+}
+
+func (r *rangeNode) decode(d *decoder) {
+	(*r).startID.decode(d)
+	(*r).contents = d.readInt32()
 }
 
 type labels []int32
@@ -599,4 +649,63 @@ func (c *CellIndex) VisitIntersectingCells(target CellUnion, visitor cellVisitor
 	}
 
 	return true
+}
+
+// Encode encodes the CellIndex.
+func (i CellIndex) Encode(w io.Writer) error {
+	e := &encoder{w: w}
+	i.encode(e)
+	return e.err
+}
+
+func (i CellIndex) encode(e *encoder) {
+	e.writeInt8(encodingVersion)
+	e.writeUint32(uint32(len(i.cellTree)))
+	for _, n := range i.cellTree {
+		n.encode(e)
+	}
+	e.writeUint32(uint32(len(i.rangeNodes)))
+	for _, r := range i.rangeNodes {
+		r.encode(e)
+	}
+}
+
+// Decode CellIndex the CellIndex.
+func (p *CellIndex) Decode(r io.Reader) error {
+	d := &decoder{r: asByteReader(r)}
+	version := d.readInt8()
+	if d.err != nil {
+		return d.err
+	}
+
+	switch version {
+	case encodingVersion:
+		p.decode(d)
+	case encodingCompressedVersion:
+		return fmt.Errorf("not implemented")
+	}
+
+	return d.err
+}
+
+func (p *CellIndex) decode(d *decoder) {
+	nNodes := d.readUint32()
+	if d.err != nil {
+		return
+	}
+	nodes := make([]cellIndexNode, nNodes)
+	for n := range nodes {
+		nodes[n].decode(d)
+	}
+	if d.err != nil {
+		return
+	}
+	nRange := d.readUint32()
+	if d.err != nil {
+		return
+	}
+	rn := make([]rangeNode, nRange)
+	for r := range rn {
+		rn[r].decode(d)
+	}
 }

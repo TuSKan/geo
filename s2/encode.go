@@ -182,6 +182,14 @@ func (d *decoder) readInt64() (x int64) {
 	return
 }
 
+func (d *decoder) readInt32() (x int32) {
+	if d.err != nil {
+		return
+	}
+	d.err = binary.Read(d.r, binary.LittleEndian, &x)
+	return
+}
+
 func (d *decoder) readUint8() (x uint8) {
 	if d.err != nil {
 		return
