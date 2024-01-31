@@ -15,6 +15,8 @@
 package s2
 
 import (
+	"fmt"
+	"os"
 	"reflect"
 	"sort"
 	"testing"
@@ -435,6 +437,46 @@ func labelsEqual(a, b []int32) bool {
 		return b[i] < b[j]
 	})
 	return reflect.DeepEqual(a, b)
+}
+
+func TestCellIndexEncoding(t *testing.T) {
+	for i := 0; i < 10; i++ {
+		index := &CellIndex{}
+		id := cellIDFromString("1/0123012301230123")
+		var target CellUnion
+		for j := 0; j < 100; j++ {
+			switch {
+			case oneIn(10):
+				index.Add(id, int32(j))
+			case oneIn(4):
+				target = append(target, id)
+			case oneIn(2):
+				id = id.NextWrap()
+			case oneIn(6) && !id.isFace():
+				id = id.immediateParent()
+			case oneIn(6) && !id.IsLeaf():
+				id = id.ChildBegin()
+			}
+		}
+		target.Normalize()
+		index.Build()
+		checkIntersection(t, "", target, index)
+
+		file := fmt.Sprintf("test_%d.idx", i)
+		f, _ := os.Create(file)
+		if err := index.Encode(f); err != nil {
+			t.Errorf("index encode error: %v", err)
+		}
+		f.Close()
+		l, _ := os.Open(file)
+		var idx CellIndex
+		if err := idx.Decode(l); err != nil {
+			t.Errorf("index encode error: %v", err)
+		}
+		checkIntersection(t, "", target, &idx)
+		l.Close()
+		os.Remove(file)
+	}
 }
 
 // TODO(roberts): Differences from C++

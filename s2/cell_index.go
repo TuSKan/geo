@@ -695,7 +695,7 @@ func (p *CellIndex) decode(d *decoder) {
 	}
 	nodes := make([]cellIndexNode, nNodes)
 	for n := range nodes {
-		nodes[n].decode(d)
+		nodes[n].Decode(d.r)
 	}
 	if d.err != nil {
 		return
@@ -706,6 +706,7 @@ func (p *CellIndex) decode(d *decoder) {
 	}
 	rn := make([]rangeNode, nRange)
 	for r := range rn {
-		rn[r].decode(d)
+		rn[r].Decode(d.r)
 	}
+	*p = CellIndex{cellTree: nodes, rangeNodes: rn}
 }
