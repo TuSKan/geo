@@ -18,9 +18,9 @@ import (
 	"math"
 	"testing"
 
-	"github.com/rubenpoppe/geo/r1"
-	"github.com/rubenpoppe/geo/r3"
-	"github.com/rubenpoppe/geo/s1"
+	"github.com/google/geo/r1"
+	"github.com/google/geo/r3"
+	"github.com/google/geo/s1"
 )
 
 func rectBoundForPoints(a, b Point) Rect {

@@ -18,7 +18,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/rubenpoppe/geo/s1"
+	"github.com/google/geo/s1"
 )
 
 func TestContainsPointQueryVertexModelOpen(t *testing.T) {

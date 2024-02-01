@@ -17,7 +17,7 @@ package s2
 import (
 	"math"
 
-	"github.com/rubenpoppe/geo/s1"
+	"github.com/google/geo/s1"
 )
 
 // maxDistance implements distance as the supplementary distance (Pi - x) to find

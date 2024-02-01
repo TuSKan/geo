@@ -22,7 +22,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/rubenpoppe/geo/r1"
+	"github.com/google/geo/r1"
 )
 
 var (

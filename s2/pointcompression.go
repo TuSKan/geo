@@ -18,7 +18,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/rubenpoppe/geo/r3"
+	"github.com/google/geo/r3"
 )
 
 // maxEncodedVertices is the maximum number of vertices, in a row, to be encoded or decoded.

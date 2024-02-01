@@ -17,8 +17,8 @@ package s2_test
 import (
 	"fmt"
 
-	"github.com/rubenpoppe/geo/s1"
-	"github.com/rubenpoppe/geo/s2"
+	"github.com/google/geo/s1"
+	"github.com/google/geo/s2"
 )
 
 func ExampleRect_DistanceToLatLng() {

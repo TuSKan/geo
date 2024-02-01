@@ -20,7 +20,7 @@ package s2
 import (
 	"math"
 
-	"github.com/rubenpoppe/geo/s1"
+	"github.com/google/geo/s1"
 )
 
 // DistanceFromSegment returns the distance of point X from line segment AB.

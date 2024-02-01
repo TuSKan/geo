@@ -19,9 +19,9 @@ import (
 	"io"
 	"math"
 
-	"github.com/rubenpoppe/geo/r1"
-	"github.com/rubenpoppe/geo/r3"
-	"github.com/rubenpoppe/geo/s1"
+	"github.com/google/geo/r1"
+	"github.com/google/geo/r3"
+	"github.com/google/geo/s1"
 )
 
 // Loop represents a simple spherical polygon. It consists of a sequence

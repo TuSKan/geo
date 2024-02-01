@@ -18,8 +18,8 @@ import (
 	"math"
 	"testing"
 
-	"github.com/rubenpoppe/geo/r2"
-	"github.com/rubenpoppe/geo/s1"
+	"github.com/google/geo/r2"
+	"github.com/google/geo/s1"
 )
 
 func TestEdgeTessellatorProjectedNoTessellation(t *testing.T) {

@@ -18,7 +18,7 @@ import (
 	"math"
 	"testing"
 
-	"github.com/rubenpoppe/geo/s1"
+	"github.com/google/geo/s1"
 )
 
 // The various Crossing methods are tested via s2edge_crosser_test

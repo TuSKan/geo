@@ -17,7 +17,7 @@ package s2
 import (
 	"sort"
 
-	"github.com/rubenpoppe/geo/r3"
+	"github.com/google/geo/r3"
 )
 
 // ConvexHullQuery builds the convex hull of any collection of points,

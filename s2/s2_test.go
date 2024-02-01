@@ -21,9 +21,9 @@ import (
 	"math/rand"
 	"os"
 
-	"github.com/rubenpoppe/geo/r1"
-	"github.com/rubenpoppe/geo/r2"
-	"github.com/rubenpoppe/geo/s1"
+	"github.com/google/geo/r1"
+	"github.com/google/geo/r2"
+	"github.com/google/geo/s1"
 )
 
 // To set in testing add "--benchmark_brute_force=true" to your test command.

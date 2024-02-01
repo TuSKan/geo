@@ -17,7 +17,7 @@ package s2
 import (
 	"sort"
 
-	"github.com/rubenpoppe/geo/r2"
+	"github.com/google/geo/r2"
 )
 
 // CrossingEdgeQuery is used to find the Edge IDs of Shapes that are crossed by

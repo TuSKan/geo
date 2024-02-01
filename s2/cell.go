@@ -18,10 +18,10 @@ import (
 	"io"
 	"math"
 
-	"github.com/rubenpoppe/geo/r1"
-	"github.com/rubenpoppe/geo/r2"
-	"github.com/rubenpoppe/geo/r3"
-	"github.com/rubenpoppe/geo/s1"
+	"github.com/google/geo/r1"
+	"github.com/google/geo/r2"
+	"github.com/google/geo/r3"
+	"github.com/google/geo/s1"
 )
 
 // Cell is an S2 region object that represents a cell. Unlike CellIDs,

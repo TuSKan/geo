@@ -19,7 +19,7 @@ import (
 	"math"
 	"testing"
 
-	"github.com/rubenpoppe/geo/r3"
+	"github.com/google/geo/r3"
 )
 
 func TestEdgeCrosserCrossings(t *testing.T) {

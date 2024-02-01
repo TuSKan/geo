@@ -20,7 +20,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/rubenpoppe/geo/s1"
+	"github.com/google/geo/s1"
 )
 
 // Note that most of the actual testing is done in s2edge_query_{closest|furthest}_test.

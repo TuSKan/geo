@@ -20,8 +20,8 @@ import (
 	"math"
 	"sort"
 
-	"github.com/rubenpoppe/geo/r3"
-	"github.com/rubenpoppe/geo/s1"
+	"github.com/google/geo/r3"
+	"github.com/google/geo/s1"
 )
 
 // Point represents a point on the unit sphere as a normalized 3D vector.

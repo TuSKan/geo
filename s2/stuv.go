@@ -17,7 +17,7 @@ package s2
 import (
 	"math"
 
-	"github.com/rubenpoppe/geo/r3"
+	"github.com/google/geo/r3"
 )
 
 //

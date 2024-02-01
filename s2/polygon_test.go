@@ -19,7 +19,7 @@ import (
 	"math/rand"
 	"testing"
 
-	"github.com/rubenpoppe/geo/s1"
+	"github.com/google/geo/s1"
 )
 
 const (

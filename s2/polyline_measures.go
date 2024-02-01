@@ -19,8 +19,8 @@ package s2
 // implement the methods in various other measures files.
 
 import (
-	"github.com/rubenpoppe/geo/r3"
-	"github.com/rubenpoppe/geo/s1"
+	"github.com/google/geo/r3"
+	"github.com/google/geo/s1"
 )
 
 // polylineLength returns the length of the given Polyline.

@@ -17,9 +17,9 @@ package s2
 import (
 	"math"
 
-	"github.com/rubenpoppe/geo/r1"
-	"github.com/rubenpoppe/geo/r3"
-	"github.com/rubenpoppe/geo/s1"
+	"github.com/google/geo/r1"
+	"github.com/google/geo/r3"
+	"github.com/google/geo/s1"
 )
 
 // RectBounder is used to compute a bounding rectangle that contains all edges

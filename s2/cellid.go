@@ -23,10 +23,10 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/rubenpoppe/geo/r1"
-	"github.com/rubenpoppe/geo/r2"
-	"github.com/rubenpoppe/geo/r3"
-	"github.com/rubenpoppe/geo/s1"
+	"github.com/google/geo/r1"
+	"github.com/google/geo/r2"
+	"github.com/google/geo/r3"
+	"github.com/google/geo/s1"
 )
 
 // CellID uniquely identifies a cell in the S2 cell decomposition.

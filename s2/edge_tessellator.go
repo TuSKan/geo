@@ -15,8 +15,8 @@
 package s2
 
 import (
-	"github.com/rubenpoppe/geo/r2"
-	"github.com/rubenpoppe/geo/s1"
+	"github.com/google/geo/r2"
+	"github.com/google/geo/s1"
 )
 
 // Tessellation is implemented by subdividing the edge until the estimated

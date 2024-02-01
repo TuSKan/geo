@@ -18,7 +18,7 @@ import (
 	"fmt"
 	"math"
 
-	"github.com/rubenpoppe/geo/r1"
+	"github.com/google/geo/r1"
 )
 
 // Point represents a point in ℝ².

@@ -17,7 +17,7 @@ package s2
 import (
 	"testing"
 
-	"github.com/rubenpoppe/geo/s1"
+	"github.com/google/geo/s1"
 )
 
 func TestFurthestEdgeQueryNoEdges(t *testing.T) {

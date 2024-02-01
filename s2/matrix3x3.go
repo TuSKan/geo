@@ -17,7 +17,7 @@ package s2
 import (
 	"fmt"
 
-	"github.com/rubenpoppe/geo/r3"
+	"github.com/google/geo/r3"
 )
 
 // matrix3x3 represents a traditional 3x3 matrix of floating point values.

@@ -18,8 +18,8 @@ import (
 	"math"
 	"testing"
 
-	"github.com/rubenpoppe/geo/r2"
-	"github.com/rubenpoppe/geo/r3"
+	"github.com/google/geo/r2"
+	"github.com/google/geo/r3"
 )
 
 func TestPlateCarreeProjectionInterpolate(t *testing.T) {

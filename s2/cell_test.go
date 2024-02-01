@@ -19,8 +19,8 @@ import (
 	"testing"
 	"unsafe"
 
-	"github.com/rubenpoppe/geo/r2"
-	"github.com/rubenpoppe/geo/s1"
+	"github.com/google/geo/r2"
+	"github.com/google/geo/s1"
 )
 
 // maxCellSize is the upper bounds on the number of bytes we want the Cell object to ever be.

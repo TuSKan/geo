@@ -20,8 +20,8 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/rubenpoppe/geo/r1"
-	"github.com/rubenpoppe/geo/r2"
+	"github.com/google/geo/r1"
+	"github.com/google/geo/r2"
 )
 
 // CellRelation describes the possible relationships between a target cell

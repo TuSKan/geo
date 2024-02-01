@@ -15,8 +15,8 @@
 package s2
 
 import (
-	"github.com/rubenpoppe/geo/r1"
-	"github.com/rubenpoppe/geo/r2"
+	"github.com/google/geo/r1"
+	"github.com/google/geo/r2"
 )
 
 // PaddedCell represents a Cell whose (u,v)-range has been expanded on

@@ -17,7 +17,7 @@ package s2
 import (
 	"testing"
 
-	"github.com/rubenpoppe/geo/r3"
+	"github.com/google/geo/r3"
 )
 
 func TestWedgeRelations(t *testing.T) {
