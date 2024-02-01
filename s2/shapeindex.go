@@ -883,9 +883,9 @@ func (s *ShapeIndex) addFaceEdge(fe faceEdge, allEdges [][]faceEdge) {
 	// the edge of the face that they don't intersect any (padded) adjacent face.
 	if aFace == face(fe.edge.V1.Vector) {
 		x, y := validFaceXYZToUV(aFace, fe.edge.V0.Vector)
-		fe.a = r2.Point{x, y}
+		fe.a = r2.Point{X: x, Y: y}
 		x, y = validFaceXYZToUV(aFace, fe.edge.V1.Vector)
-		fe.b = r2.Point{x, y}
+		fe.b = r2.Point{X: x, Y: y}
 
 		maxUV := 1 - cellPadding
 		if math.Abs(fe.a.X) <= maxUV && math.Abs(fe.a.Y) <= maxUV &&

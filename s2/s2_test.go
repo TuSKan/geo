@@ -508,9 +508,9 @@ func (f *fractal) generateR2Vertices() []r2.Point {
 
 	// The Koch "snowflake" consists of three Koch curves whose initial edges
 	// form an equilateral triangle.
-	v0 := r2.Point{1.0, 0.0}
-	v1 := r2.Point{-0.5, math.Sqrt(3) / 2}
-	v2 := r2.Point{-0.5, -math.Sqrt(3) / 2}
+	v0 := r2.Point{X: 1.0, Y: 0.0}
+	v1 := r2.Point{X: -0.5, Y: math.Sqrt(3) / 2}
+	v2 := r2.Point{X: -0.5, Y: -math.Sqrt(3) / 2}
 	vertices = append(vertices, f.r2VerticesHelper(v0, v1, 0)...)
 	vertices = append(vertices, f.r2VerticesHelper(v1, v2, 0)...)
 	vertices = append(vertices, f.r2VerticesHelper(v2, v0, 0)...)

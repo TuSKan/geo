@@ -23,17 +23,17 @@ import (
 )
 
 var (
-	pz   = Point{r3.Vector{0, 0, 1}}
-	p000 = Point{r3.Vector{1, 0, 0}}
-	p045 = Point{r3.Vector{1, 1, 0}.Normalize()}
-	p090 = Point{r3.Vector{0, 1, 0}}
-	p180 = Point{r3.Vector{-1, 0, 0}}
+	pz   = Point{r3.Vector{X: 0, Y: 0, Z: 1}}
+	p000 = Point{r3.Vector{X: 1, Y: 0, Z: 0}}
+	p045 = Point{r3.Vector{X: 1, Y: 1, Z: 0}.Normalize()}
+	p090 = Point{r3.Vector{X: 0, Y: 1, Z: 0}}
+	p180 = Point{r3.Vector{X: -1, Y: 0, Z: 0}}
 	// Degenerate triangles.
-	pr = Point{r3.Vector{0.257, -0.5723, 0.112}}
-	pq = Point{r3.Vector{-0.747, 0.401, 0.2235}}
+	pr = Point{r3.Vector{X: 0.257, Y: -0.5723, Z: 0.112}}
+	pq = Point{r3.Vector{X: -0.747, Y: 0.401, Z: 0.2235}}
 
 	// For testing the Girard area fall through case.
-	g1 = Point{r3.Vector{1, 1, 1}}
+	g1 = Point{r3.Vector{X: 1, Y: 1, Z: 1}}
 	g2 = Point{g1.Add(pr.Mul(1e-15)).Normalize()}
 	g3 = Point{g1.Add(pq.Mul(1e-15)).Normalize()}
 )
@@ -51,13 +51,13 @@ func TestPointMeasuresPointArea(t *testing.T) {
 		// places into the result, so it is not quite a difference of 0.
 		{p045, pz, p180, 3.0 * math.Pi / 4.0, 1e-14},
 		// Make sure that Area has good *relative* accuracy even for very small areas.
-		{Point{r3.Vector{epsilon, 0, 1}}, Point{r3.Vector{0, epsilon, 1}}, pz, 0.5 * epsilon * epsilon, 1e-14},
+		{Point{r3.Vector{X: epsilon, Y: 0, Z: 1}}, Point{r3.Vector{X: 0, Y: epsilon, Z: 1}}, pz, 0.5 * epsilon * epsilon, 1e-14},
 		// Make sure that it can handle degenerate triangles.
 		{pr, pr, pr, 0.0, 0},
 		{pr, pq, pr, 0.0, 1e-15},
 		{p000, p045, p090, 0.0, 0},
 		// Try a very long and skinny triangle.
-		{p000, Point{r3.Vector{1, 1, epsilon}}, p090, 5.8578643762690495119753e-11, 1e-9},
+		{p000, Point{r3.Vector{X: 1, Y: 1, Z: epsilon}}, p090, 5.8578643762690495119753e-11, 1e-9},
 		{g1, g2, g3, 0.0, 1e-15},
 	}
 	for _, test := range tests {

@@ -129,7 +129,7 @@ func encodeFirstPointFixedLength(e *encoder, pi, qi uint32, level int, piCoder, 
 // To encode leaf cells, this requires 8 bytes for the first vertex plus
 // an average of 3.8 bytes for each additional vertex, when computed on
 // Google's geographic repository.
-func encodePointCompressed(e *encoder, pi, qi uint32, level int, piCoder, qiCoder *nthDerivativeCoder) {
+func encodePointCompressed(e *encoder, pi, qi uint32, _ int, piCoder, qiCoder *nthDerivativeCoder) {
 	// ZigZagEncode, as varint requires the maximum number of bytes for
 	// negative numbers.
 	zzPi := zigzagEncode(piCoder.encode(int32(pi)))
@@ -270,7 +270,7 @@ func zigzagDecode(x uint32) int32 {
 	return int32((x >> 1) ^ uint32((int32(x&1)<<31)>>31))
 }
 
-func decodePointCompressed(d *decoder, level int, piCoder, qiCoder *nthDerivativeCoder) (pi, qi uint32) {
+func decodePointCompressed(d *decoder, _ int, piCoder, qiCoder *nthDerivativeCoder) (pi, qi uint32) {
 	interleavedZigZagEncodedDerivPiQi := d.readUvarint()
 	piZigzag, qiZigzag := deinterleaveUint32(interleavedZigZagEncodedDerivPiQi)
 	return uint32(piCoder.decode(zigzagDecode(piZigzag))), uint32(qiCoder.decode(zigzagDecode(qiZigzag)))

@@ -311,7 +311,7 @@ func TestLoopRectBound(t *testing.T) {
 	if !southHemi.RectBound().Lng.IsFull() {
 		t.Errorf("south hemi loop's RectBound should have a full longitude range")
 	}
-	if got, want := southHemi.RectBound().Lat, (r1.Interval{-math.Pi / 2, 0}); !r1IntervalsApproxEqual(got, want, rectError.Lat.Radians()) {
+	if got, want := southHemi.RectBound().Lat, (r1.Interval{Lo: -math.Pi / 2, Hi: 0}); !r1IntervalsApproxEqual(got, want, rectError.Lat.Radians()) {
 		t.Errorf("south hemi loop's RectBound latitude interval (%v) should be %v", got, want)
 	}
 
@@ -321,7 +321,7 @@ func TestLoopRectBound(t *testing.T) {
 	// The highest latitude of each edge is attained at its midpoint.
 	mid := Point{arctic80Inv.vertices[0].Vector.Add(arctic80Inv.vertices[1].Vector).Mul(.5)}
 	if got, want := arctic80Inv.RectBound().Lat.Hi, float64(LatLngFromPoint(mid).Lat); !float64Near(got, want, 10*dblEpsilon) {
-		t.Errorf("arctic 80 inverse loop's RectBound should have a latutude hi of %v, got %v", got, want)
+		t.Errorf("arctic 80 inverse loop's RectBound should have a latitude hi of %v, got %v", got, want)
 	}
 }
 
@@ -392,8 +392,8 @@ func rotate(l *Loop) *Loop {
 }
 
 func TestLoopContainsPoint(t *testing.T) {
-	north := Point{r3.Vector{0, 0, 1}}
-	south := Point{r3.Vector{0, 0, -1}}
+	north := Point{r3.Vector{X: 0, Y: 0, Z: 1}}
+	south := Point{r3.Vector{X: 0, Y: 0, Z: -1}}
 	east := PointFromCoords(0, 1, 0)
 	west := PointFromCoords(0, -1, 0)
 
@@ -490,10 +490,10 @@ func TestLoopVertex(t *testing.T) {
 		vertex int
 		want   Point
 	}{
-		{EmptyLoop(), 0, Point{r3.Vector{0, 0, 1}}},
-		{EmptyLoop(), 1, Point{r3.Vector{0, 0, 1}}},
-		{FullLoop(), 0, Point{r3.Vector{0, 0, -1}}},
-		{FullLoop(), 1, Point{r3.Vector{0, 0, -1}}},
+		{EmptyLoop(), 0, Point{r3.Vector{X: 0, Y: 0, Z: 1}}},
+		{EmptyLoop(), 1, Point{r3.Vector{X: 0, Y: 0, Z: 1}}},
+		{FullLoop(), 0, Point{r3.Vector{X: 0, Y: 0, Z: -1}}},
+		{FullLoop(), 1, Point{r3.Vector{X: 0, Y: 0, Z: -1}}},
 		{arctic80, 0, parsePoint("80:-150")},
 		{arctic80, 1, parsePoint("80:-30")},
 		{arctic80, 2, parsePoint("80:90")},
@@ -552,8 +552,8 @@ func TestLoopEdge(t *testing.T) {
 		{
 			loop:  farHemi,
 			edge:  2,
-			wantA: Point{r3.Vector{0, 0, -1}},
-			wantB: Point{r3.Vector{0, -1, 0}},
+			wantA: Point{r3.Vector{X: 0, Y: 0, Z: -1}},
+			wantB: Point{r3.Vector{X: 0, Y: -1, Z: 0}},
 		},
 		{
 			loop: candyCane,
@@ -724,7 +724,7 @@ func TestLoopContainsMatchesCrossingSign(t *testing.T) {
 	// be inside the bound of L.
 
 	// Start with a cell that ends up producing the problem.
-	cellID := cellIDFromPoint(Point{r3.Vector{1, 1, 1}}).Parent(21)
+	cellID := cellIDFromPoint(Point{r3.Vector{X: 1, Y: 1, Z: 1}}).Parent(21)
 	children, ok := CellFromCellID(cellID).Children()
 	if !ok {
 		t.Fatalf("error subdividing cell")
@@ -1749,18 +1749,18 @@ func TestLoopValidateDetectsInvalidLoops(t *testing.T) {
 			// Ensure points are not normalized.
 			msg: "loop with non-normalized vertices",
 			points: []Point{
-				{r3.Vector{2, 0, 0}},
-				{r3.Vector{0, 1, 0}},
-				{r3.Vector{0, 0, 1}},
+				{r3.Vector{X: 2, Y: 0, Z: 0}},
+				{r3.Vector{X: 0, Y: 1, Z: 0}},
+				{r3.Vector{X: 0, Y: 0, Z: 1}},
 			},
 		},
 		{
 			// Adjacent antipodal vertices
 			msg: "loop with antipodal points",
 			points: []Point{
-				{r3.Vector{1, 0, 0}},
-				{r3.Vector{-1, 0, 0}},
-				{r3.Vector{0, 0, 1}},
+				{r3.Vector{X: 1, Y: 0, Z: 0}},
+				{r3.Vector{X: -1, Y: 0, Z: 0}},
+				{r3.Vector{X: 0, Y: 0, Z: 1}},
 			},
 		},
 	}

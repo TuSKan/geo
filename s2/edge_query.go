@@ -429,7 +429,7 @@ func (e *EdgeQuery) findEdgesInternal(target distanceTarget, opts *queryOptions)
 
 	if opts.includeInteriors {
 		shapeIDs := map[int32]struct{}{}
-		e.target.visitContainingShapes(e.index, func(containingShape Shape, targetPoint Point) bool {
+		e.target.visitContainingShapes(e.index, func(containingShape Shape, _ Point) bool {
 			shapeIDs[e.index.idForShape(containingShape)] = struct{}{}
 			return len(shapeIDs) < opts.maxResults
 		})

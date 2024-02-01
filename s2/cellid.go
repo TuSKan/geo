@@ -648,7 +648,7 @@ func stToIJ(s float64) int {
 //
 // is always true.
 func cellIDFromPoint(p Point) CellID {
-	f, u, v := xyzToFaceUV(r3.Vector{p.X, p.Y, p.Z})
+	f, u, v := xyzToFaceUV(r3.Vector{X: p.X, Y: p.Y, Z: p.Z})
 	i := stToIJ(uvToST(u))
 	j := stToIJ(uvToST(v))
 	return cellIDFromFaceIJ(f, i, j)
@@ -786,7 +786,7 @@ func (ci CellID) Advance(steps int64) CellID {
 // centerST return the center of the CellID in (s,t)-space.
 func (ci CellID) centerST() r2.Point {
 	_, si, ti := ci.faceSiTi()
-	return r2.Point{siTiToST(si), siTiToST(ti)}
+	return r2.Point{X: siTiToST(si), Y: siTiToST(ti)}
 }
 
 // sizeST returns the edge length of this CellID in (s,t)-space at the given level.
@@ -797,7 +797,7 @@ func (ci CellID) sizeST(level int) float64 {
 // boundST returns the bound of this CellID in (s,t)-space.
 func (ci CellID) boundST() r2.Rect {
 	s := ci.sizeST(ci.Level())
-	return r2.RectFromCenterSize(ci.centerST(), r2.Point{s, s})
+	return r2.RectFromCenterSize(ci.centerST(), r2.Point{X: s, Y: s})
 }
 
 // centerUV returns the center of this CellID in (u,v)-space. Note that
@@ -806,7 +806,7 @@ func (ci CellID) boundST() r2.Rect {
 // the (u,v) rectangle covered by the cell.
 func (ci CellID) centerUV() r2.Point {
 	_, si, ti := ci.faceSiTi()
-	return r2.Point{stToUV(siTiToST(si)), stToUV(siTiToST(ti))}
+	return r2.Point{X: stToUV(siTiToST(si)), Y: stToUV(siTiToST(ti))}
 }
 
 // boundUV returns the bound of this CellID in (u,v)-space.
@@ -839,7 +839,7 @@ func expandEndpoint(u, maxV, sinDist float64) float64 {
 // it contains all points within 5km of the original cell. You can then
 // test whether a point lies within the expanded bounds like this:
 //
-//	if u, v, ok := faceXYZtoUV(face, point); ok && bound.ContainsPoint(r2.Point{u,v}) { ... }
+//	if u, v, ok := faceXYZtoUV(face, point); ok && bound.ContainsPoint(r2.Point{X:u, Y:v}) { ... }
 //
 // Limitations:
 //
@@ -861,12 +861,12 @@ func expandedByDistanceUV(uv r2.Rect, distance s1.Angle) r2.Rect {
 	sinDist := math.Sin(float64(distance))
 	return r2.Rect{
 		X: r1.Interval{
-			expandEndpoint(uv.X.Lo, maxV, -sinDist),
-			expandEndpoint(uv.X.Hi, maxV, sinDist),
+			Lo: expandEndpoint(uv.X.Lo, maxV, -sinDist),
+			Hi: expandEndpoint(uv.X.Hi, maxV, sinDist),
 		},
 		Y: r1.Interval{
-			expandEndpoint(uv.Y.Lo, maxU, -sinDist),
-			expandEndpoint(uv.Y.Hi, maxU, sinDist),
+			Lo: expandEndpoint(uv.Y.Lo, maxU, -sinDist),
+			Hi: expandEndpoint(uv.Y.Hi, maxU, sinDist),
 		},
 	}
 }

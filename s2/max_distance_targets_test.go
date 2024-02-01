@@ -262,7 +262,7 @@ func TestDistanceTargetMaxPointTargetUpdateDistanceToEdgeWhenEqual(t *testing.T)
 func containingShapesForTarget(target distanceTarget, index *ShapeIndex, maxShapes int) []int {
 	shapeIDs := map[int32]bool{}
 	target.visitContainingShapes(index,
-		func(containingShape Shape, targetPoint Point) bool {
+		func(containingShape Shape, _ Point) bool {
 			// TODO(roberts): Update this if Shapes get an ID.
 			shapeIDs[index.idForShape(containingShape)] = true
 			return len(shapeIDs) < maxShapes
